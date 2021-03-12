@@ -9,6 +9,8 @@
             <argument type="service_locator" tag="pfilsx.dto_converter.dto_mapper" index-by="key" default-index-method="getDtoClassName"/>
         </service>
 
+        <service id="Pfilsx\DtoParamConverter\Factory\DtoMapperFactory" alias="pfilsx.dto_converter.mapper_factory" />
+
         <service id="pfilsx.dto_converter.converter" class="Pfilsx\DtoParamConverter\Request\ParamConverter\DtoParamConverter">
             <tag name="request.param_converter" converter="dto" />
             <argument type="service" id="serializer" />
