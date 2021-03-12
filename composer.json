@@ -1,7 +1,7 @@
 {
     "name": "pfilsx/dto-param-converter-bundle",
     "type": "symfony-bundle",
-    "description": "This toSymfony bundle provides a way to convert requests into dto easily",
+    "description": "This Symfony bundle provides a way to convert requests into dto easily",
     "license": "MIT",
     "keywords": [
         "param-converter",
@@ -28,7 +28,8 @@
         "doctrine/orm": "^2.5",
         "doctrine/doctrine-bundle": "^1.11|^2.0",
         "symfony/expression-language": "^4.4|^5.1",
-        "symfony/validator": "^4.4|^5.1"
+        "symfony/validator": "^4.4|^5.1",
+        "symfony/security": "^4.4|^5.1"
     },
     "autoload": {
         "psr-4": {

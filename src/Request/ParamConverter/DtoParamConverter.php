@@ -21,6 +21,8 @@ use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
 use Symfony\Component\ExpressionLanguage\SyntaxError;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
+use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
@@ -57,6 +59,8 @@ final class DtoParamConverter implements ParamConverterInterface
 
     private ?ExpressionLanguage $language;
 
+    private ?TokenStorageInterface $tokenStorage;
+
     private array $defaultOptions = [
         self::OPTION_SERIALIZER_CONTEXT => [],
         self::OPTION_VALIDATOR_GROUPS => null,
@@ -75,7 +79,8 @@ final class DtoParamConverter implements ParamConverterInterface
         DtoMapperFactory $mapperFactory,
         ?ValidatorInterface $validator = null,
         ?ManagerRegistry $registry = null,
-        ?ExpressionLanguage $expressionLanguage = null
+        ?ExpressionLanguage $expressionLanguage = null,
+        ?TokenStorageInterface $tokenStorage = null
     ) {
         $this->serializer = $serializer;
         $this->reader = $reader;
@@ -83,6 +88,7 @@ final class DtoParamConverter implements ParamConverterInterface
         $this->validator = $validator;
         $this->registry = $registry;
         $this->language = $expressionLanguage;
+        $this->tokenStorage = $tokenStorage;
     }
 
     public function supports(ParamConverter $configuration): bool
@@ -223,7 +229,8 @@ final class DtoParamConverter implements ParamConverterInterface
         }
         $variables = array_merge($request->attributes->all(), [
             'repository' => $this->getManager($options[self::OPTION_ENTITY_MANAGER], $className)
-                ->getRepository($this->getEntityClassForDto($className))
+                ->getRepository($this->getEntityClassForDto($className)),
+            'user' => $this->getUser()
         ]);
 
         try {
@@ -308,5 +315,22 @@ final class DtoParamConverter implements ParamConverterInterface
         $refClass = new ReflectionClass($className);
 
         return $this->reader->getClassAnnotation($refClass, Dto::class);
+    }
+
+    private function getUser(): ?UserInterface
+    {
+        if (!$this->tokenStorage instanceof TokenStorageInterface)
+        {
+            return null;
+        }
+
+        if (($token = $this->tokenStorage->getToken()) === null) {
+            return null;
+        }
+
+        if (!is_object($user = $token->getUser())) {
+            return null;
+        }
+        return $user;
     }
 }

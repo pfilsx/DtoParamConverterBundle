@@ -6,7 +6,7 @@
 
     <services>
         <service id="pfilsx.dto_converter.mapper_factory" class="Pfilsx\DtoParamConverter\Factory\DtoMapperFactory">
-            <argument type="service_locator" tag="pfilsx.dto_converter.dto_mapper" index-by="key" default-index-method="getDtoClassName"/>
+            <argument />
         </service>
 
         <service id="Pfilsx\DtoParamConverter\Factory\DtoMapperFactory" alias="pfilsx.dto_converter.mapper_factory" />
@@ -19,6 +19,7 @@
             <argument type="service" id="validator" on-invalid="null" />
             <argument type="service" id="doctrine" on-invalid="null" />
             <argument type="service" id="sensio_framework_extra.converter.doctrine.orm.expression_language" on-invalid="null" />
+            <argument type="service" id="security.token_storage" on-invalid="null" />
         </service>
     </services>
 </container>
