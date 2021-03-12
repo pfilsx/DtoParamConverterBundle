@@ -13,6 +13,7 @@ use Doctrine\Persistence\ObjectManager;
 use LogicException;
 use Pfilsx\DtoParamConverter\Annotation\Dto;
 use Pfilsx\DtoParamConverter\Exception\ConverterValidationException;
+use Pfilsx\DtoParamConverter\Exception\NotNormalizableConverterValueException;
 use Pfilsx\DtoParamConverter\Factory\DtoMapperFactory;
 use ReflectionClass;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
@@ -23,6 +24,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
+use Symfony\Component\Serializer\Exception\NotNormalizableValueException;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
@@ -108,24 +110,28 @@ final class DtoParamConverter implements ParamConverterInterface
 
         $content = $this->getRequestContent($request);
 
-        if (empty($content)) {
-            $object = $this->isPreloadDtoRequired($className, $options, $request)
-                ? $this->createPreloadedDto($name, $className, $options, $request)
-                : new $className();
-        } elseif (is_string($content)) {
-            $object = $this->serializer->deserialize(
-                $content,
-                $className,
-                $request->getContentType() ?? $request->getFormat('application/json'),
-                $this->getSerializerContext($name, $className, $options, $request)
-            );
-        } else {
-            $object = $this->serializer->denormalize(
-                $content,
-                $className,
-                null,
-                $this->getSerializerContext($name, $className, $options, $request)
-            );
+        try {
+            if (empty($content)) {
+                $object = $this->isPreloadDtoRequired($className, $options, $request)
+                    ? $this->createPreloadedDto($name, $className, $options, $request)
+                    : new $className();
+            } elseif (is_string($content)) {
+                $object = $this->serializer->deserialize(
+                    $content,
+                    $className,
+                    $request->getContentType() ?? $request->getFormat('application/json'),
+                    $this->getSerializerContext($name, $className, $options, $request)
+                );
+            } else {
+                $object = $this->serializer->denormalize(
+                    $content,
+                    $className,
+                    null,
+                    $this->getSerializerContext($name, $className, $options, $request)
+                );
+            }
+        } catch (NotNormalizableValueException $exception) {
+            throw new NotNormalizableConverterValueException($exception->getMessage(), 400, $exception);
         }
 
         if (
