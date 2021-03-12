@@ -109,7 +109,9 @@ final class DtoParamConverter implements ParamConverterInterface
         $content = $this->getRequestContent($request);
 
         if (empty($content)) {
-            $object = new $className();
+            $object = $this->isPreloadDtoRequired($className, $options, $request)
+                ? $this->createPreloadedDto($name, $className, $options, $request)
+                : new $className();
         } elseif (is_string($content)) {
             $object = $this->serializer->deserialize(
                 $content,
