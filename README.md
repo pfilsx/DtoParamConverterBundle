@@ -139,7 +139,7 @@ Configuration
 *    DtoParamConverter::OPTION_VALIDATOR_GROUPS: [],
 *    DtoParamConverter::OPTION_PRELOAD_ENTITY: true,
 *    DtoParamConverter::OPTION_STRICT_PRELOAD_ENTITY: true,
-*    DtoParamConverter::OPTION_ENTITY_ATTRIBUTE: null,
+*    DtoParamConverter::OPTION_ENTITY_ID_ATTRIBUTE: null,
 *    DtoParamConverter::OPTION_ENTITY_MANAGER: null,
 *    DtoParamConverter::OPTION_ENTITY_MAPPING: []
 *    DtoParamConverter::OPTION_ENTITY_EXPR: null,

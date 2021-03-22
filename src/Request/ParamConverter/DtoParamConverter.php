@@ -39,7 +39,7 @@ final class DtoParamConverter implements ParamConverterInterface
 
     public const OPTION_STRICT_PRELOAD_ENTITY = 'strictPreloadEntity';
 
-    public const OPTION_ENTITY_ATTRIBUTE = 'entityAttribute';
+    public const OPTION_ENTITY_ID_ATTRIBUTE = 'entityIdAttribute';
 
     public const OPTION_ENTITY_MANAGER = 'entityManager';
 
@@ -68,7 +68,7 @@ final class DtoParamConverter implements ParamConverterInterface
         self::OPTION_VALIDATOR_GROUPS => null,
         self::OPTION_PRELOAD_ENTITY => true,
         self::OPTION_STRICT_PRELOAD_ENTITY => true,
-        self::OPTION_ENTITY_ATTRIBUTE => null,
+        self::OPTION_ENTITY_ID_ATTRIBUTE => null,
         self::OPTION_ENTITY_MANAGER => null,
         self::OPTION_ENTITY_MAPPING => [],
         self::OPTION_ENTITY_EXPR => null,
@@ -224,9 +224,15 @@ final class DtoParamConverter implements ParamConverterInterface
         } else {
             $repository = $this->getManager($options[self::OPTION_ENTITY_MANAGER], $className)
                 ->getRepository($this->getEntityClassForDto($className));
-            $identifierValue = $this->getIdentifierValue($name, $options, $request);
+            $identifierValue = $this->getIdentifierValue($className, $name, $options, $request);
 
-            return $repository->find($identifierValue);
+            if ($identifierValue !== false)
+            {
+                return $repository->find($identifierValue);
+            }
+            $keys = $request->attributes->keys();
+            $mapping = $keys ? array_combine($keys, $keys) : [];
+            return $this->findEntityByMapping($className, $request, $mapping, $options);
         }
     }
 
@@ -288,14 +294,31 @@ final class DtoParamConverter implements ParamConverterInterface
         throw new LogicException("Unable to find entity class for {$dtoClassName}");
     }
 
-    private function getIdentifierValue(string $name, array $options, Request $request)
+    /**
+     * @param string $className
+     * @param string $name
+     * @param array $options
+     * @param Request $request
+     * @return false|mixed
+     */
+    private function getIdentifierValue(string $className, string $name, array $options, Request $request)
     {
         $routeAttributes = $request->attributes->get('_route_params', []);
 
-        if ($options[self::OPTION_ENTITY_ATTRIBUTE] !== null) {
-            $attributeName = $options[self::OPTION_ENTITY_ATTRIBUTE];
+        if ($options[self::OPTION_ENTITY_ID_ATTRIBUTE] !== null) {
+            $attributeName = $options[self::OPTION_ENTITY_ID_ATTRIBUTE];
         } elseif (count($routeAttributes) === 1) {
             $attributeName = array_key_first($routeAttributes);
+
+            $em = $this->getManager($options[self::OPTION_ENTITY_MANAGER], $className);
+            $entityClassName = $this->getEntityClassForDto($className);
+            $metadata = $em->getClassMetadata($entityClassName);
+            if (
+                $metadata->hasField($attributeName)
+                || ($metadata->hasAssociation($attributeName) && $metadata->isSingleValuedAssociation($attributeName))
+            ) {
+                return false;
+            }
         } else {
             $attributeName = $name;
             if (mb_strtolower(mb_substr($attributeName, -3)) === 'dto') {
@@ -306,7 +329,11 @@ final class DtoParamConverter implements ParamConverterInterface
             return $routeAttributes[$attributeName];
         }
 
-        throw new LogicException("Unable to guess how to get attribute from the request information for parameter \${$name}.");
+        if ($request->attributes->has('id') && !$options[self::OPTION_ENTITY_ID_ATTRIBUTE]) {
+            return $request->attributes->get('id');
+        }
+
+        return false;
     }
 
     private function getManager(?string $name, string $className): ?ObjectManager
