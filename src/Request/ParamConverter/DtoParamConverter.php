@@ -12,8 +12,7 @@ use Doctrine\Persistence\ManagerRegistry;
 use Doctrine\Persistence\ObjectManager;
 use LogicException;
 use Pfilsx\DtoParamConverter\Annotation\Dto;
-use Pfilsx\DtoParamConverter\Exception\ConverterValidationException;
-use Pfilsx\DtoParamConverter\Exception\NotNormalizableConverterValueException;
+use Pfilsx\DtoParamConverter\Configuration\Configuration;
 use Pfilsx\DtoParamConverter\Factory\DtoMapperFactory;
 use ReflectionClass;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
@@ -49,6 +48,8 @@ final class DtoParamConverter implements ParamConverterInterface
 
     public const OPTION_FORCE_VALIDATE = 'forceValidate';
 
+    private Configuration $configuration;
+
     private SerializerInterface $serializer;
 
     private Reader $reader;
@@ -75,13 +76,15 @@ final class DtoParamConverter implements ParamConverterInterface
         self::OPTION_FORCE_VALIDATE => false,
     ];
 
+
     public function __construct(
-        SerializerInterface $serializer,
-        Reader $reader,
-        DtoMapperFactory $mapperFactory,
-        ?ValidatorInterface $validator = null,
-        ?ManagerRegistry $registry = null,
-        ?ExpressionLanguage $expressionLanguage = null,
+        Configuration          $configuration,
+        SerializerInterface    $serializer,
+        Reader                 $reader,
+        DtoMapperFactory       $mapperFactory,
+        ?ValidatorInterface    $validator = null,
+        ?ManagerRegistry       $registry = null,
+        ?ExpressionLanguage    $expressionLanguage = null,
         ?TokenStorageInterface $tokenStorage = null
     ) {
         $this->serializer = $serializer;
@@ -91,6 +94,7 @@ final class DtoParamConverter implements ParamConverterInterface
         $this->registry = $registry;
         $this->language = $expressionLanguage;
         $this->tokenStorage = $tokenStorage;
+        $this->configuration = $configuration;
     }
 
     public function supports(ParamConverter $configuration): bool
@@ -106,7 +110,9 @@ final class DtoParamConverter implements ParamConverterInterface
     {
         $name = $configuration->getName();
         $className = $configuration->getClass();
-        $options = array_replace($this->defaultOptions, $configuration->getOptions());
+
+        $options = $this->applyConfiguration();
+        $options = array_replace($options, $configuration->getOptions());
 
         $content = $this->getRequestContent($request);
 
@@ -131,7 +137,8 @@ final class DtoParamConverter implements ParamConverterInterface
                 );
             }
         } catch (NotNormalizableValueException $exception) {
-            throw new NotNormalizableConverterValueException($exception->getMessage(), 400, $exception);
+            $exceptionClass = $this->configuration->getNormalizerExceptionClass();
+            throw new $exceptionClass($exception->getMessage(), 400, $exception);
         }
 
         if (
@@ -141,7 +148,10 @@ final class DtoParamConverter implements ParamConverterInterface
             $errors = $this->validator->validate($object, null, $options[self::OPTION_VALIDATOR_GROUPS] ?? null);
 
             if ($errors->count() !== 0) {
-                throw new ConverterValidationException($errors);
+                $exceptionClass = $this->configuration->getValidationExceptionClass();
+                $exception = new $exceptionClass();
+                $exception->setViolations($errors);
+                throw $exception;
             }
         }
 
@@ -184,7 +194,7 @@ final class DtoParamConverter implements ParamConverterInterface
 
     private function isPreloadDtoRequired(string $className, array $options, Request $request): bool
     {
-        if (!in_array($request->getMethod(), [Request::METHOD_PATCH, Request::METHOD_GET], true)) {
+        if (!in_array($request->getMethod(), $this->configuration->getPreloadMethods(), true)) {
             return false;
         }
         if ($this->registry === null) {
@@ -367,5 +377,13 @@ final class DtoParamConverter implements ParamConverterInterface
             return null;
         }
         return $user;
+    }
+
+    private function applyConfiguration(): array
+    {
+        return array_replace($this->defaultOptions, [
+            self::OPTION_PRELOAD_ENTITY => $this->configuration->isPreloadEntity(),
+            self::OPTION_STRICT_PRELOAD_ENTITY => $this->configuration->isStrictPreloadEntity()
+        ]);
     }
 }

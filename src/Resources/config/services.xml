@@ -6,20 +6,31 @@
 
     <services>
         <service id="pfilsx.dto_converter.mapper_factory" class="Pfilsx\DtoParamConverter\Factory\DtoMapperFactory">
-            <argument />
+            <argument/>
         </service>
 
-        <service id="Pfilsx\DtoParamConverter\Factory\DtoMapperFactory" alias="pfilsx.dto_converter.mapper_factory" />
+        <service id="Pfilsx\DtoParamConverter\Factory\DtoMapperFactory" alias="pfilsx.dto_converter.mapper_factory"/>
 
-        <service id="pfilsx.dto_converter.converter" class="Pfilsx\DtoParamConverter\Request\ParamConverter\DtoParamConverter">
-            <tag name="request.param_converter" converter="dto" />
-            <argument type="service" id="serializer" />
-            <argument type="service" id="annotation_reader" />
-            <argument type="service" id="pfilsx.dto_converter.mapper_factory" />
-            <argument type="service" id="validator" on-invalid="null" />
-            <argument type="service" id="doctrine" on-invalid="null" />
-            <argument type="service" id="sensio_framework_extra.converter.doctrine.orm.expression_language" on-invalid="null" />
-            <argument type="service" id="security.token_storage" on-invalid="null" />
+        <service id="pfilsx.dto_converter.configuration" class="Pfilsx\DtoParamConverter\Configuration\Configuration">
+            <argument>%pfilsx.dto_converter.preload_entity%</argument>
+            <argument>%pfilsx.dto_converter.strict_preload_entity%</argument>
+            <argument>%pfilsx.dto_converter.preload_methods%</argument>
+            <argument>%pfilsx.dto_converter.validation_exception_class%</argument>
+            <argument>%pfilsx.dto_converter.normalizer_exception_class%</argument>
+        </service>
+
+        <service id="pfilsx.dto_converter.converter"
+                 class="Pfilsx\DtoParamConverter\Request\ParamConverter\DtoParamConverter">
+            <tag name="request.param_converter" converter="dto"/>
+            <argument type="service" id="pfilsx.dto_converter.configuration"/>
+            <argument type="service" id="serializer"/>
+            <argument type="service" id="annotation_reader"/>
+            <argument type="service" id="pfilsx.dto_converter.mapper_factory"/>
+            <argument type="service" id="validator" on-invalid="null"/>
+            <argument type="service" id="doctrine" on-invalid="null"/>
+            <argument type="service" id="sensio_framework_extra.converter.doctrine.orm.expression_language"
+                      on-invalid="null"/>
+            <argument type="service" id="security.token_storage" on-invalid="null"/>
         </service>
     </services>
 </container>
