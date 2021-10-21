@@ -102,12 +102,16 @@ final class SomeDtoMapper implements DtoMapperInterface
      */
     public function mapToDto(object $entity, object $dto): void
     {
-        // your mapping logic
+        // your entity to dto mapping logic
+        $dto->title = $entity->getTitle();
+        ...
     }
 
     public function mapToEntity(object $dto, object $entity): void
     {
-        // your mapping logic
+        // your dto to entity mapping logic
+        $entity->setTitle($dto->title);
+        ...
     }
 }
 ```
@@ -132,6 +136,19 @@ public function someMethod(SomeDto $dto): void
 
 Configuration
 -------------
+You can configure bundle globally via `config/packages/dto_param_converter.yaml`:
+
+```yaml
+dto_param_converter:
+  preload_entity: true # whether converter should preload entity into dto before request mapping
+  strict_preload_entity: true # whether converter should throw an exception if no entity to preload found
+  preload_methods: [ 'PATCH', 'GET' ]  # request methods for entity preloading
+  validation_exception_class: 'Pfilsx\DtoParamConverter\Exception\ConverterValidationException' # exception class should that be thrown on validation errors (if validation enabled)
+  normalizer_exception_class: 'Pfilsx\DtoParamConverter\Exception\NotNormalizableConverterValueException' # exception class that should be thrown on normalization errors
+```
+
+Or You can configure converter for each action
+
 ```php
 /**
 * @ParamConverter("someDto", options={
