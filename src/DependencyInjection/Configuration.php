@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Pfilsx\DtoParamConverter\DependencyInjection;
 
-
 use Pfilsx\DtoParamConverter\Exception\ConverterValidationException;
 use Pfilsx\DtoParamConverter\Exception\NotNormalizableConverterValueException;
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
@@ -31,7 +30,6 @@ final class Configuration implements ConfigurationInterface
             ->scalarNode('validation_exception_class')->defaultValue(ConverterValidationException::class)->end()
             ->scalarNode('normalizer_exception_class')->defaultValue(NotNormalizableConverterValueException::class)->end()
             ->end();
-
 
         return $treeBuilder;
     }

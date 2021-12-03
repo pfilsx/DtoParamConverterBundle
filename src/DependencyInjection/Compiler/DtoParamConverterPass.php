@@ -13,7 +13,7 @@ final class DtoParamConverterPass implements CompilerPassInterface
 {
     public function process(ContainerBuilder $container)
     {
-        if (false === $container->hasDefinition('pfilsx.dto_converter.mapper_factory')) {
+        if ($container->hasDefinition('pfilsx.dto_converter.mapper_factory') === false) {
             return;
         }
 
@@ -24,7 +24,7 @@ final class DtoParamConverterPass implements CompilerPassInterface
 
         foreach ($mappersServices as $serviceId => $tags) {
             $serviceDefinition = $container->getDefinition($serviceId);
-            $indexMethod = $serviceDefinition->getClass(). '::getDtoClassName';
+            $indexMethod = $serviceDefinition->getClass() . '::getDtoClassName';
             $mapperIndex = $indexMethod();
             $mappersReferences[$mapperIndex] = new Reference($serviceId);
         }

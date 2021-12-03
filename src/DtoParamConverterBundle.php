@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Pfilsx\DtoParamConverter;
 
-
 use Pfilsx\DtoParamConverter\DependencyInjection\Compiler\DtoParamConverterPass;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\HttpKernel\Bundle\Bundle;

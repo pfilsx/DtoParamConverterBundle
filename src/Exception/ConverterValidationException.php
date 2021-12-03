@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Pfilsx\DtoParamConverter\Exception;
 
-
 use Pfilsx\DtoParamConverter\Contract\ValidationExceptionInterface;
 use Symfony\Component\Validator\ConstraintViolationListInterface;
 
@@ -25,6 +24,7 @@ final class ConverterValidationException extends DtoConverterException implement
     public function setViolations(ConstraintViolationListInterface $violations): self
     {
         $this->violations = $violations;
+
         return $this;
     }
 }

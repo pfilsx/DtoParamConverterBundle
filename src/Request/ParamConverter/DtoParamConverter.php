@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Pfilsx\DtoParamConverter\Request\ParamConverter;
 
-
 use Doctrine\Common\Annotations\Reader;
 use Doctrine\DBAL\Types\ConversionException;
 use Doctrine\ORM\NoResultException;
@@ -76,7 +75,6 @@ final class DtoParamConverter implements ParamConverterInterface
         self::OPTION_FORCE_VALIDATE => false,
     ];
 
-
     public function __construct(
         Configuration          $configuration,
         SerializerInterface    $serializer,
@@ -86,7 +84,8 @@ final class DtoParamConverter implements ParamConverterInterface
         ?ManagerRegistry       $registry = null,
         ?ExpressionLanguage    $expressionLanguage = null,
         ?TokenStorageInterface $tokenStorage = null
-    ) {
+    )
+    {
         $this->serializer = $serializer;
         $this->reader = $reader;
         $this->mapperFactory = $mapperFactory;
@@ -138,6 +137,7 @@ final class DtoParamConverter implements ParamConverterInterface
             }
         } catch (NotNormalizableValueException $exception) {
             $exceptionClass = $this->configuration->getNormalizerExceptionClass();
+
             throw new $exceptionClass($exception->getMessage(), 400, $exception);
         }
 
@@ -151,6 +151,7 @@ final class DtoParamConverter implements ParamConverterInterface
                 $exceptionClass = $this->configuration->getValidationExceptionClass();
                 $exception = new $exceptionClass();
                 $exception->setViolations($errors);
+
                 throw $exception;
             }
         }
@@ -236,12 +237,12 @@ final class DtoParamConverter implements ParamConverterInterface
                 ->getRepository($this->getEntityClassForDto($className));
             $identifierValue = $this->getIdentifierValue($className, $name, $options, $request);
 
-            if ($identifierValue !== false)
-            {
+            if ($identifierValue !== false) {
                 return $repository->find($identifierValue);
             }
             $keys = $request->attributes->keys();
             $mapping = $keys ? array_combine($keys, $keys) : [];
+
             return $this->findEntityByMapping($className, $request, $mapping, $options);
         }
     }
@@ -254,7 +255,7 @@ final class DtoParamConverter implements ParamConverterInterface
         $variables = array_merge($request->attributes->all(), [
             'repository' => $this->getManager($options[self::OPTION_ENTITY_MANAGER], $className)
                 ->getRepository($this->getEntityClassForDto($className)),
-            'user' => $this->getUser()
+            'user' => $this->getUser(),
         ]);
 
         try {
@@ -309,6 +310,7 @@ final class DtoParamConverter implements ParamConverterInterface
      * @param string $name
      * @param array $options
      * @param Request $request
+     *
      * @return false|mixed
      */
     private function getIdentifierValue(string $className, string $name, array $options, Request $request)
@@ -364,8 +366,7 @@ final class DtoParamConverter implements ParamConverterInterface
 
     private function getUser(): ?UserInterface
     {
-        if (!$this->tokenStorage instanceof TokenStorageInterface)
-        {
+        if (!$this->tokenStorage instanceof TokenStorageInterface) {
             return null;
         }
 
@@ -376,6 +377,7 @@ final class DtoParamConverter implements ParamConverterInterface
         if (!is_object($user = $token->getUser())) {
             return null;
         }
+
         return $user;
     }
 
@@ -383,7 +385,7 @@ final class DtoParamConverter implements ParamConverterInterface
     {
         return array_replace($this->defaultOptions, [
             self::OPTION_PRELOAD_ENTITY => $this->configuration->isPreloadEntity(),
-            self::OPTION_STRICT_PRELOAD_ENTITY => $this->configuration->isStrictPreloadEntity()
+            self::OPTION_STRICT_PRELOAD_ENTITY => $this->configuration->isStrictPreloadEntity(),
         ]);
     }
 }

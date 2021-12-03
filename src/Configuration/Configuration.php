@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Pfilsx\DtoParamConverter\Configuration;
 
-
 use Pfilsx\DtoParamConverter\Contract\NormalizerExceptionInterface;
 use Pfilsx\DtoParamConverter\Contract\ValidationExceptionInterface;
 use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
