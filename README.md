@@ -17,7 +17,7 @@ Features
 Requirement
 -----------
 * PHP 7.4+
-* Symfony 4.4+|5.3+
+* Symfony 4.4+|5.3+|6.0+
 * SensioFrameworkExtraBundle
 
 Installation

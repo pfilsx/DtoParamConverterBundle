@@ -249,7 +249,7 @@ final class DtoParamConverter implements ParamConverterInterface
     private function findEntityViaExpression(string $className, Request $request, string $expression, array $options): ?object
     {
         if ($this->language === null) {
-            throw new LogicException(sprintf('To use the @ParamConverter tag with the "expr" option, you need to install the ExpressionLanguage component.'));
+            throw new LogicException('To use the @ParamConverter tag with the "expr" option, you need to install the ExpressionLanguage component.');
         }
         $variables = array_merge($request->attributes->all(), [
             'repository' => $this->getManager($options[self::OPTION_ENTITY_MANAGER], $className)
