@@ -12,7 +12,6 @@ use Symfony\Component\HttpKernel\DependencyInjection\Extension;
 
 final class DtoParamConverterExtension extends Extension
 {
-
     public function load(array $configs, ContainerBuilder $container)
     {
         $this->loadConfiguration($configs, $container);
