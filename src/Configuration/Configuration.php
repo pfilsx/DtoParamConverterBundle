@@ -17,13 +17,12 @@ final class Configuration
     private string $normalizerExceptionClass;
 
     public function __construct(
-        bool   $preloadEntity,
-        bool   $strictPreloadEntity,
-        array  $preloadMethods,
+        bool $preloadEntity,
+        bool $strictPreloadEntity,
+        array $preloadMethods,
         string $validationExceptionClass,
         string $normalizerExceptionClass
-    )
-    {
+    ) {
         $this->preloadEntity = $preloadEntity;
         $this->strictPreloadEntity = $strictPreloadEntity;
         $this->preloadMethods = $preloadMethods;

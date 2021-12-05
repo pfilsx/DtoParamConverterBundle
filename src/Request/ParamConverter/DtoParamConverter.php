@@ -12,6 +12,7 @@ use Doctrine\Persistence\ObjectManager;
 use LogicException;
 use Pfilsx\DtoParamConverter\Annotation\Dto;
 use Pfilsx\DtoParamConverter\Configuration\Configuration;
+use Pfilsx\DtoParamConverter\Contract\ValidationExceptionInterface;
 use Pfilsx\DtoParamConverter\Factory\DtoMapperFactory;
 use ReflectionClass;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
@@ -23,8 +24,12 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Serializer\Exception\NotNormalizableValueException;
+use Symfony\Component\Serializer\Exception\PartialDenormalizationException;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
+use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
 use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Component\Validator\ConstraintViolation;
+use Symfony\Component\Validator\ConstraintViolationList;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 final class DtoParamConverter implements ParamConverterInterface
@@ -76,16 +81,15 @@ final class DtoParamConverter implements ParamConverterInterface
     ];
 
     public function __construct(
-        Configuration          $configuration,
-        SerializerInterface    $serializer,
-        Reader                 $reader,
-        DtoMapperFactory       $mapperFactory,
-        ?ValidatorInterface    $validator = null,
-        ?ManagerRegistry       $registry = null,
-        ?ExpressionLanguage    $expressionLanguage = null,
+        Configuration $configuration,
+        SerializerInterface $serializer,
+        Reader $reader,
+        DtoMapperFactory $mapperFactory,
+        ?ValidatorInterface $validator = null,
+        ?ManagerRegistry $registry = null,
+        ?ExpressionLanguage $expressionLanguage = null,
         ?TokenStorageInterface $tokenStorage = null
-    )
-    {
+    ) {
         $this->serializer = $serializer;
         $this->reader = $reader;
         $this->mapperFactory = $mapperFactory;
@@ -135,6 +139,19 @@ final class DtoParamConverter implements ParamConverterInterface
                     $this->getSerializerContext($name, $className, $options, $request)
                 );
             }
+        } catch (PartialDenormalizationException $e) {
+            $violations = new ConstraintViolationList();
+
+            foreach ($e->getErrors() as $exception) {
+                $message = sprintf('The type must be one of "%s" ("%s" given).', implode(', ', $exception->getExpectedTypes()), $exception->getCurrentType());
+                $parameters = [];
+                if ($exception->canUseMessageForUser()) {
+                    $parameters['hint'] = $exception->getMessage();
+                }
+                $violations->add(new ConstraintViolation($message, '', $parameters, null, $exception->getPath(), null));
+            }
+
+            throw $this->generateValidationException($violations);
         } catch (NotNormalizableValueException $exception) {
             $exceptionClass = $this->configuration->getNormalizerExceptionClass();
 
@@ -145,14 +162,10 @@ final class DtoParamConverter implements ParamConverterInterface
             $this->validator instanceof ValidatorInterface
             && ($options[self::OPTION_FORCE_VALIDATE] || $request->getMethod() !== Request::METHOD_GET)
         ) {
-            $errors = $this->validator->validate($object, null, $options[self::OPTION_VALIDATOR_GROUPS] ?? null);
+            $violations = $this->validator->validate($object, null, $options[self::OPTION_VALIDATOR_GROUPS] ?? null);
 
-            if ($errors->count() !== 0) {
-                $exceptionClass = $this->configuration->getValidationExceptionClass();
-                $exception = new $exceptionClass();
-                $exception->setViolations($errors);
-
-                throw $exception;
+            if ($violations->count() !== 0) {
+                throw $this->generateValidationException($violations);
             }
         }
 
@@ -185,9 +198,10 @@ final class DtoParamConverter implements ParamConverterInterface
     {
         $context = $options[self::OPTION_SERIALIZER_CONTEXT] ?? [];
         if ($this->isPreloadDtoRequired($className, $options, $request)) {
-            $context = array_merge($context, [
-                AbstractNormalizer::OBJECT_TO_POPULATE => $this->createPreloadedDto($name, $className, $options, $request),
-            ]);
+            $context[AbstractNormalizer::OBJECT_TO_POPULATE] = $this->createPreloadedDto($name, $className, $options, $request);
+        }
+        if (defined(DenormalizerInterface::class . '::COLLECT_DENORMALIZATION_ERRORS')) {
+            $context[DenormalizerInterface::COLLECT_DENORMALIZATION_ERRORS] = true;
         }
 
         return $context;
@@ -306,9 +320,9 @@ final class DtoParamConverter implements ParamConverterInterface
     }
 
     /**
-     * @param string $className
-     * @param string $name
-     * @param array $options
+     * @param string  $className
+     * @param string  $name
+     * @param array   $options
      * @param Request $request
      *
      * @return false|mixed
@@ -387,5 +401,14 @@ final class DtoParamConverter implements ParamConverterInterface
             self::OPTION_PRELOAD_ENTITY => $this->configuration->isPreloadEntity(),
             self::OPTION_STRICT_PRELOAD_ENTITY => $this->configuration->isStrictPreloadEntity(),
         ]);
+    }
+
+    private function generateValidationException(ConstraintViolationList $violations): ValidationExceptionInterface
+    {
+        $exceptionClass = $this->configuration->getValidationExceptionClass();
+        $exception = new $exceptionClass();
+        $exception->setViolations($violations);
+
+        throw $exception;
     }
 }
