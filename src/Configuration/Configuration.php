@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Pfilsx\DtoParamConverter\Configuration;
 
-
 use Pfilsx\DtoParamConverter\Contract\NormalizerExceptionInterface;
 use Pfilsx\DtoParamConverter\Contract\ValidationExceptionInterface;
 use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
@@ -18,13 +17,12 @@ final class Configuration
     private string $normalizerExceptionClass;
 
     public function __construct(
-        bool   $preloadEntity,
-        bool   $strictPreloadEntity,
-        array  $preloadMethods,
+        bool $preloadEntity,
+        bool $strictPreloadEntity,
+        array $preloadMethods,
         string $validationExceptionClass,
         string $normalizerExceptionClass
-    )
-    {
+    ) {
         $this->preloadEntity = $preloadEntity;
         $this->strictPreloadEntity = $strictPreloadEntity;
         $this->preloadMethods = $preloadMethods;
