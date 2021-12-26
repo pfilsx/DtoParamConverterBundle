@@ -162,7 +162,11 @@ final class DtoParamConverter implements ParamConverterInterface
             $this->validator instanceof ValidatorInterface
             && ($options[self::OPTION_FORCE_VALIDATE] || $request->getMethod() !== Request::METHOD_GET)
         ) {
-            $violations = $this->validator->validate($object, null, $options[self::OPTION_VALIDATOR_GROUPS] ?? null);
+            $violations = $this->validator->validate(
+                $object,
+                null,
+                $options[self::OPTION_VALIDATOR_GROUPS] ?? ['Default', $request->attributes->get('_route')]
+            );
 
             if ($violations->count() !== 0) {
                 throw $this->generateValidationException($violations);
