@@ -27,15 +27,26 @@
         "symfony/property-info": "^4.4|^5.3|^6.0"
     },
     "require-dev": {
+        "ext-json": "*",
         "doctrine/orm": "^2.5",
         "doctrine/doctrine-bundle": "^1.11|^2.0",
         "symfony/expression-language": "^4.4|^5.3|^6.0",
         "symfony/validator": "^4.4|^5.3|^6.0",
-        "symfony/security-core": "^5.3|^6.0"
+        "symfony/security-core": "^5.3|^6.0",
+        "symfony/phpunit-bridge": "^6.0",
+        "phpunit/phpunit": "^9.5"
     },
     "autoload": {
         "psr-4": {
             "Pfilsx\\DtoParamConverter\\": "src"
+        },
+        "exclude-from-classmap": [
+            "/tests/"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Pfilsx\\DtoParamConverter\\Tests\\": "tests/"
         }
     }
 }
