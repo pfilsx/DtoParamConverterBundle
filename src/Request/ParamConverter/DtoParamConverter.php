@@ -251,11 +251,12 @@ final class DtoParamConverter implements ParamConverterInterface
         } elseif (!empty($mapping = $options[self::OPTION_ENTITY_MAPPING])) {
             return $this->findEntityByMapping($className, $request, $mapping, $options);
         } else {
-            $repository = $this->getManager($options[self::OPTION_ENTITY_MANAGER], $className)
-                ->getRepository($this->getEntityClassForDto($className));
             $identifierValue = $this->getIdentifierValue($className, $name, $options, $request);
 
             if ($identifierValue !== false) {
+                $repository = $this->getManager($options[self::OPTION_ENTITY_MANAGER], $className)
+                    ->getRepository($this->getEntityClassForDto($className));
+
                 return $repository->find($identifierValue);
             }
             $keys = $request->attributes->keys();
@@ -344,7 +345,7 @@ final class DtoParamConverter implements ParamConverterInterface
             $entityClassName = $this->getEntityClassForDto($className);
             $metadata = $em->getClassMetadata($entityClassName);
             if (
-                $metadata->hasField($attributeName)
+                (!$metadata->isIdentifier($attributeName) && $metadata->hasField($attributeName))
                 || ($metadata->hasAssociation($attributeName) && $metadata->isSingleValuedAssociation($attributeName))
             ) {
                 return false;
@@ -358,7 +359,6 @@ final class DtoParamConverter implements ParamConverterInterface
         if (array_key_exists($attributeName, $routeAttributes)) {
             return $routeAttributes[$attributeName];
         }
-
         if ($request->attributes->has('id') && !$options[self::OPTION_ENTITY_ID_ATTRIBUTE]) {
             return $request->attributes->get('id');
         }
@@ -377,7 +377,11 @@ final class DtoParamConverter implements ParamConverterInterface
 
     private function getClassDtoAnnotation(string $className): ?Dto
     {
-        $refClass = new ReflectionClass($className);
+        try {
+            $refClass = new ReflectionClass($className);
+        } catch (\ReflectionException $e) {
+            return null;
+        }
 
         return $this->reader->getClassAnnotation($refClass, Dto::class);
     }
