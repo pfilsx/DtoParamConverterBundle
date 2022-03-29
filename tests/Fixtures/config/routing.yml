@@ -1,0 +1,3 @@
+Pfilsx\DtoParamConverter\Tests\Fixtures\Controller\SimpleController:
+  resource: Pfilsx\DtoParamConverter\Tests\Fixtures\Controller\SimpleController
+  type: annotation

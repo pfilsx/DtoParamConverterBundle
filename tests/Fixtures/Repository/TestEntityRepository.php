@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace Pfilsx\DtoParamConverter\Tests\Fixtures\Repository;
 
+use Doctrine\Persistence\ObjectRepository;
 use Pfilsx\DtoParamConverter\Tests\Fixtures\Entity\TestEntity;
 
-final class TestEntityRepository
+final class TestEntityRepository implements ObjectRepository
 {
     /**
      * @var TestEntity[]
@@ -32,15 +33,27 @@ final class TestEntityRepository
         $this->storage[2] = $entity2;
     }
 
-    public function find(int $id): ?TestEntity
+    public function find($id): ?TestEntity
     {
         return $this->storage[$id] ?? null;
     }
 
-    public function findOneBy(array $params): ?TestEntity
+    public function findOneBy(array $criteria): ?TestEntity
     {
-        $filteredStorage = array_filter($this->storage, static function ($entity) use ($params) {
-            foreach ($params as $key => $value) {
+        $filteredStorage = $this->findBy($criteria);
+
+        return array_shift($filteredStorage);
+    }
+
+    public function findAll(): array
+    {
+        return $this->storage;
+    }
+
+    public function findBy(array $criteria, ?array $orderBy = null, $limit = null, $offset = null): array
+    {
+        return array_filter($this->storage, static function ($entity) use ($criteria) {
+            foreach ($criteria as $key => $value) {
                 $getter = 'get' . ucfirst($key);
 
                 if (!\method_exists($entity, $getter)) {
@@ -54,7 +67,10 @@ final class TestEntityRepository
 
             return true;
         });
+    }
 
-        return array_shift($filteredStorage);
+    public function getClassName(): string
+    {
+        return TestEntity::class;
     }
 }
