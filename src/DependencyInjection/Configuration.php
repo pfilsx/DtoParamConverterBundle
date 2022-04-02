@@ -21,14 +21,24 @@ final class Configuration implements ConfigurationInterface
 
         $rootNode
             ->children()
-            ->booleanNode('preload_entity')->defaultTrue()->end()
-            ->booleanNode('strict_preload_entity')->defaultTrue()->end()
-            ->arrayNode('preload_methods')
-            ->scalarPrototype()->end()
-            ->defaultValue([Request::METHOD_GET, Request::METHOD_PATCH])
-            ->end()
-            ->scalarNode('validation_exception_class')->defaultValue(ConverterValidationException::class)->end()
-            ->scalarNode('normalizer_exception_class')->defaultValue(NotNormalizableConverterValueException::class)->end()
+                ->booleanNode('preload_entity')->defaultTrue()->end()
+                ->booleanNode('strict_preload_entity')->defaultTrue()->end()
+                ->arrayNode('preload_methods')
+                    ->scalarPrototype()->end()
+                    ->defaultValue([Request::METHOD_GET, Request::METHOD_PATCH])
+                ->end()
+                ->scalarNode('validation_exception_class')->defaultValue(ConverterValidationException::class)->end()
+                ->scalarNode('normalizer_exception_class')->defaultValue(NotNormalizableConverterValueException::class)->end()
+                ->arrayNode('strict_types')
+                    ->info('type enforcement on denormalization configuration')
+                    ->canBeDisabled()
+                    ->children()
+                        ->arrayNode('excluded_methods')
+                            ->scalarPrototype()->end()
+                        ->defaultValue([])
+                        ->end()
+                    ->end()
+                ->end()
             ->end();
 
         return $treeBuilder;

@@ -63,18 +63,6 @@ final class DtoParamConverterTest extends TestCase
         $this->language = $this->getMockBuilder(ExpressionLanguage::class)->getMock();
         $this->serviceLocator = $this->getMockBuilder(ServiceLocator::class)->disableOriginalConstructor()->getMock();
         $this->tokenStorage = $this->getMockBuilder(TokenStorageInterface::class)->getMock();
-        $reader = new AnnotationReader();
-
-        $this->converter = new DtoParamConverter(
-            new Configuration(true, true, ['GET', 'PATCH', 'OPTIONS'], ConverterValidationException::class, NotNormalizableConverterValueException::class),
-            new Serializer([new ObjectNormalizer(null, null, null, new ReflectionExtractor())], [new JsonEncoder()]),
-            $reader,
-            new DtoMapperFactory($this->serviceLocator),
-            Validation::createValidatorBuilder()->addLoader(new AnnotationLoader($reader))->getValidator(),
-            $this->registry,
-            $this->language,
-            $this->tokenStorage
-        );
     }
 
     /**
@@ -85,6 +73,7 @@ final class DtoParamConverterTest extends TestCase
      */
     public function testSupports($className, bool $expectedResult): void
     {
+        $this->initializeConverter();
         self::assertSame($expectedResult, $this->converter->supports($this->createConfiguration($className)));
     }
 
@@ -113,6 +102,8 @@ final class DtoParamConverterTest extends TestCase
         }
 
         $config = $this->createConfiguration(TestDto::class, $converterOptions, 'testDto');
+
+        $this->initializeConverter();
 
         self::assertTrue($this->converter->apply($request, $config));
 
@@ -147,6 +138,8 @@ final class DtoParamConverterTest extends TestCase
         }
 
         $config = $this->createConfiguration(TestDto::class, $converterOptions);
+
+        $this->initializeConverter();
 
         self::assertTrue($this->converter->apply($request, $config));
 
@@ -188,6 +181,8 @@ final class DtoParamConverterTest extends TestCase
             ])
             ->willReturn($repository->find(1));
 
+        $this->initializeConverter();
+
         self::assertTrue($this->converter->apply($request, $config));
 
         $dto = $request->attributes->get('arg');
@@ -214,6 +209,8 @@ final class DtoParamConverterTest extends TestCase
             ->method('evaluate')
             ->will($this->throwException(new SyntaxError('syntax error message', 10)));
 
+        $this->initializeConverter();
+
         $this->converter->apply($request, $config);
     }
 
@@ -236,6 +233,8 @@ final class DtoParamConverterTest extends TestCase
             ->method('evaluate')
             ->will($stub);
 
+        $this->initializeConverter();
+
         $this->converter->apply($request, $config);
     }
 
@@ -253,6 +252,8 @@ final class DtoParamConverterTest extends TestCase
         $request = $this->createRequest(Request::METHOD_POST, ['title' => 'Test', 'value' => 20]);
         $config = $this->createConfiguration(TestDto::class);
 
+        $this->initializeConverter();
+
         self::assertTrue($this->converter->apply($request, $config));
 
         $dto = $request->attributes->get('arg');
@@ -265,15 +266,16 @@ final class DtoParamConverterTest extends TestCase
     /**
      * @dataProvider providerTestApplyOnPostWithInvalidData
      *
-     * @param array  $requestData
-     * @param string $expectedExceptionClass
+     * @param array $requestData
      */
-    public function testApplyOnPostWithInvalidData(array $requestData, string $expectedExceptionClass): void
+    public function testApplyOnPostWithInvalidData(array $requestData): void
     {
-        self::expectException($expectedExceptionClass);
+        self::expectException(ConverterValidationException::class);
 
         $request = $this->createRequest(Request::METHOD_POST, $requestData);
         $config = $this->createConfiguration(TestDto::class);
+
+        $this->initializeConverter();
 
         $this->converter->apply($request, $config);
     }
@@ -281,9 +283,33 @@ final class DtoParamConverterTest extends TestCase
     public function providerTestApplyOnPostWithInvalidData(): array
     {
         return [
-            'wrong type' => [['title' => 'Test', 'value' => 'test'], ConverterValidationException::class],
-            'invalid value' => [['title' => '', 'value' => 5], ConverterValidationException::class],
+            'wrong type' => [['title' => 'Test', 'value' => 'test']],
+            'similar type' => [['title' => 'Test', 'value' => '20']],
+            'invalid value' => [['title' => '', 'value' => 5]],
         ];
+    }
+
+    public function testApplyOnPostWithStrictTypesDisabled(): void
+    {
+        $request = $this->createRequest(Request::METHOD_POST, ['title' => 'Test', 'value' => '20']);
+        $config = $this->createConfiguration(TestDto::class);
+
+        $this->initializeConverter(new Configuration(
+            true,
+            true,
+            ['GET', 'PATCH', 'OPTIONS'],
+            ConverterValidationException::class,
+            NotNormalizableConverterValueException::class,
+            ['enabled' => false]
+        ));
+
+        self::assertTrue($this->converter->apply($request, $config));
+
+        $dto = $request->attributes->get('arg');
+
+        self::assertInstanceOf(TestDto::class, $dto);
+
+        self::assertEquals(['title' => 'Test', 'value' => 20], ['title' => $dto->title, 'value' => $dto->value]);
     }
 
     /**
@@ -299,6 +325,8 @@ final class DtoParamConverterTest extends TestCase
         $request->attributes->set('id', 1);
 
         $config = $this->createConfiguration(TestDto::class);
+
+        $this->initializeConverter();
 
         self::assertTrue($this->converter->apply($request, $config));
 
@@ -327,6 +355,8 @@ final class DtoParamConverterTest extends TestCase
         $request->attributes->set('id', 1);
 
         $config = $this->createConfiguration(TestDto::class);
+
+        $this->initializeConverter();
 
         self::assertTrue($this->converter->apply($request, $config));
 
@@ -437,5 +467,30 @@ final class DtoParamConverterTest extends TestCase
             ->method('getManagerForClass')
             ->with($expectedEntityClassName)
             ->willReturn($managerMock);
+    }
+
+    private function initializeConverter(?Configuration $configuration = null): void
+    {
+        $reader = new AnnotationReader();
+
+        $configuration = $configuration ?? new Configuration(
+            true,
+            true,
+            ['GET', 'PATCH', 'OPTIONS'],
+            ConverterValidationException::class,
+            NotNormalizableConverterValueException::class,
+            ['enabled' => true]
+        );
+
+        $this->converter = new DtoParamConverter(
+            $configuration,
+            new Serializer([new ObjectNormalizer(null, null, null, new ReflectionExtractor())], [new JsonEncoder()]),
+            $reader,
+            new DtoMapperFactory($this->serviceLocator),
+            Validation::createValidatorBuilder()->addLoader(new AnnotationLoader($reader))->getValidator(),
+            $this->registry,
+            $this->language,
+            $this->tokenStorage
+        );
     }
 }

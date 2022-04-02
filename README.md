@@ -145,6 +145,9 @@ dto_param_converter:
   preload_methods: [ 'PATCH', 'GET' ]  # request methods for entity preloading
   validation_exception_class: 'Pfilsx\DtoParamConverter\Exception\ConverterValidationException' # exception class should that be thrown on validation errors (if validation enabled)
   normalizer_exception_class: 'Pfilsx\DtoParamConverter\Exception\NotNormalizableConverterValueException' # exception class that should be thrown on normalization errors
+  strict_types: # types enforcement on denormalization
+    enabled: true
+    excluded_methods: ['GET'] # excluded request methods for types enforcement
 ```
 
 Or You can configure converter for each action
