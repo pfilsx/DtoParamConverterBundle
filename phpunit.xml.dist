@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" bootstrap="./vendor/autoload.php" colors="true" xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/9.3/phpunit.xsd">
+  <php>
+    <server name="KERNEL_CLASS" value="Pfilsx\DtoParamConverter\Tests\Fixtures\TestKernel" />
+    <server name="KERNEL_DIR" value="tests/Fixtures/" />
+    <env name="SYMFONY_DEPRECATIONS_HELPER" value="/disabled/"/>
+  </php>
+
+  <testsuites>
+    <testsuite name="DtoParamConverterBundle">
+      <directory suffix="Test.php">./tests</directory>
+    </testsuite>
+  </testsuites>
+
+  <coverage>
+    <include>
+      <directory>./src</directory>
+    </include>
+    <exclude>
+      <directory>./src/Resources</directory>
+    </exclude>
+  </coverage>
+</phpunit>

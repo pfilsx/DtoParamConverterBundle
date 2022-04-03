@@ -1,0 +1,44 @@
+framework:
+  test: true
+  secret: test
+  router:
+    resource: "%kernel.project_dir%/config/routing.yml"
+  fragments:
+    enabled: true
+
+doctrine:
+  dbal:
+    driver:   pdo_sqlite
+    memory:   true
+
+  orm:
+    auto_mapping: true
+    mappings:
+      Pfilsx\DtoParamConverter\Tests\Fixtures\Entity:
+        is_bundle: false
+        type: annotation
+        dir: '%kernel.project_dir%/Entity'
+        prefix: 'Pfilsx\DtoParamConverter\Tests\Fixtures\Entity'
+        alias: Pfilsx\DtoParamConverter\Tests\Fixtures\Entity
+
+
+sensio_framework_extra:
+  router:
+    annotations: false
+
+dto_param_converter:
+  strict_types:
+    enabled: true
+    excluded_methods: ['GET']
+
+services:
+  _defaults:
+    autowire: true
+    autoconfigure: true
+  Pfilsx\DtoParamConverter\Tests\Fixtures\:
+    resource: '../'
+    exclude:
+      - '../config/'
+      - '../Entity/'
+      - '../var/'
+      - '../TestKernel.php'

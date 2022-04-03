@@ -17,6 +17,7 @@
             <argument>%pfilsx.dto_converter.preload_methods%</argument>
             <argument>%pfilsx.dto_converter.validation_exception_class%</argument>
             <argument>%pfilsx.dto_converter.normalizer_exception_class%</argument>
+            <argument>%pfilsx.dto_converter.strict_types%</argument>
         </service>
 
         <service id="pfilsx.dto_converter.converter"
