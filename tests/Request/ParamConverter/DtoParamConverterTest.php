@@ -295,11 +295,9 @@ final class DtoParamConverterTest extends TestCase
         $config = $this->createConfiguration(TestDto::class);
 
         $this->initializeConverter(new Configuration(
-            true,
-            true,
-            ['GET', 'PATCH', 'OPTIONS'],
             ConverterValidationException::class,
             NotNormalizableConverterValueException::class,
+            ['enabled' => true, 'methods' => ['GET', 'PATCH', 'OPTIONS']],
             ['enabled' => false]
         ));
 
@@ -474,11 +472,9 @@ final class DtoParamConverterTest extends TestCase
         $reader = new AnnotationReader();
 
         $configuration = $configuration ?? new Configuration(
-            true,
-            true,
-            ['GET', 'PATCH', 'OPTIONS'],
             ConverterValidationException::class,
             NotNormalizableConverterValueException::class,
+            ['enabled' => true, 'methods' => ['GET', 'PATCH', 'OPTIONS']],
             ['enabled' => true]
         );
 

@@ -13,25 +13,19 @@ use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
  */
 final class Configuration
 {
-    private bool $preloadEntity;
-    private bool $strictPreloadEntity;
-    private array $preloadMethods;
     private string $validationExceptionClass;
     private string $normalizerExceptionClass;
+
+    private PreloadConfiguration $preloadConfiguration;
+
     private StrictTypesConfiguration $strictTypesConfiguration;
 
     public function __construct(
-        bool $preloadEntity,
-        bool $strictPreloadEntity,
-        array $preloadMethods,
         string $validationExceptionClass,
         string $normalizerExceptionClass,
+        array $preloadParams,
         array $strictTypes
     ) {
-        $this->preloadEntity = $preloadEntity;
-        $this->strictPreloadEntity = $strictPreloadEntity;
-        $this->preloadMethods = $preloadMethods;
-
         if (!class_exists($validationExceptionClass)) {
             throw new InvalidConfigurationException("Unable to determine class: {$validationExceptionClass}");
         }
@@ -52,22 +46,9 @@ final class Configuration
 
         $this->normalizerExceptionClass = $normalizerExceptionClass;
 
+        $this->preloadConfiguration = PreloadConfiguration::create($preloadParams);
+
         $this->strictTypesConfiguration = StrictTypesConfiguration::create($strictTypes);
-    }
-
-    public function isPreloadEntity(): bool
-    {
-        return $this->preloadEntity;
-    }
-
-    public function isStrictPreloadEntity(): bool
-    {
-        return $this->strictPreloadEntity;
-    }
-
-    public function getPreloadMethods(): array
-    {
-        return $this->preloadMethods;
     }
 
     public function getValidationExceptionClass(): string
@@ -78,6 +59,11 @@ final class Configuration
     public function getNormalizerExceptionClass(): string
     {
         return $this->normalizerExceptionClass;
+    }
+
+    public function getPreloadConfiguration(): PreloadConfiguration
+    {
+        return $this->preloadConfiguration;
     }
 
     public function getStrictTypesConfiguration(): StrictTypesConfiguration

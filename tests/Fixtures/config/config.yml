@@ -27,6 +27,8 @@ sensio_framework_extra:
     annotations: false
 
 dto_param_converter:
+  preload:
+    methods: ['GET', 'PATCH']
   strict_types:
     enabled: true
     excluded_methods: ['GET']
