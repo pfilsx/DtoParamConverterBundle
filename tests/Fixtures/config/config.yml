@@ -26,6 +26,11 @@ sensio_framework_extra:
   router:
     annotations: false
 
+dto_param_converter:
+  strict_types:
+    enabled: true
+    excluded_methods: ['GET']
+
 services:
   _defaults:
     autowire: true

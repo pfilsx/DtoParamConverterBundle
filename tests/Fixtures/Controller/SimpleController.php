@@ -14,6 +14,37 @@ use Symfony\Component\Routing\Annotation\Route;
 final class SimpleController extends AbstractController
 {
     /**
+     * @Route("/test", methods={"GET"})
+     * @ParamConverter("dto", options={
+     *     DtoParamConverter::OPTION_PRELOAD_ENTITY: false
+     * })
+     *
+     * @param TestDto $dto
+     *
+     * @return JsonResponse
+     */
+    public function getAction(TestDto $dto): JsonResponse
+    {
+        return $this->json($dto);
+    }
+
+    /**
+     * @Route("/test/strict", methods={"GET"})
+     * @ParamConverter("dto", options={
+     *     DtoParamConverter::OPTION_PRELOAD_ENTITY: false,
+     *     DtoParamConverter::OPTION_SERIALIZER_CONTEXT: {"disable_type_enforcement": false}
+     * })
+     *
+     * @param TestDto $dto
+     *
+     * @return JsonResponse
+     */
+    public function getActionWithOverloadedSerializerContext(TestDto $dto): JsonResponse
+    {
+        return $this->json($dto);
+    }
+
+    /**
      * @Route("/test/{id}", methods={"GET"})
      *
      * @param TestDto $dto

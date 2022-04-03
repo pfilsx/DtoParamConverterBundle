@@ -4,12 +4,39 @@ declare(strict_types=1);
 
 namespace Pfilsx\DtoParamConverter\Tests\Functional;
 
+use Pfilsx\DtoParamConverter\Exception\ConverterValidationException;
 use Pfilsx\DtoParamConverter\Tests\Fixtures\Controller\SimpleController;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\HttpFoundation\Request;
 
 final class SimpleControllerTest extends WebTestCase
 {
+    /**
+     * @see SimpleController::getAction()
+     */
+    public function testGetAction(): void
+    {
+        $client = self::createClient();
+        $client->request(Request::METHOD_GET, '/test', ['title' => 'Test title', 'value' => 20]);
+
+        $this->assertResponseIsSuccessful();
+        self::assertEquals([
+            'title' => 'Test title',
+            'value' => 20,
+        ], \json_decode($client->getResponse()->getContent(), true));
+    }
+
+    /**
+     * @see SimpleController::getActionWithOverloadedSerializerContext()
+     */
+    public function testGetActionWithOverloadedSerializerContext(): void
+    {
+        self::expectException(ConverterValidationException::class);
+        $client = self::createClient();
+        $client->catchExceptions(false);
+        $client->request(Request::METHOD_GET, '/test/strict', ['title' => 'Test title', 'value' => '20']);
+    }
+
     /**
      * @see SimpleController::getWithPreloadAction()
      */

@@ -26,6 +26,7 @@ use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Serializer\Exception\NotNormalizableValueException;
 use Symfony\Component\Serializer\Exception\PartialDenormalizationException;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
+use Symfony\Component\Serializer\Normalizer\AbstractObjectNormalizer;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
 use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\Validator\ConstraintViolation;
@@ -200,7 +201,14 @@ final class DtoParamConverter implements ParamConverterInterface
 
     private function getSerializerContext(string $name, string $className, array $options, Request $request): array
     {
-        $context = $options[self::OPTION_SERIALIZER_CONTEXT] ?? [];
+        $strictTypesConfiguration = $this->configuration->getStrictTypesConfiguration();
+
+        $context = [
+            AbstractObjectNormalizer::DISABLE_TYPE_ENFORCEMENT => !$strictTypesConfiguration->isEnabled()
+                || in_array($request->getMethod(), $strictTypesConfiguration->getExcludedMethods(), true),
+        ];
+
+        $context = array_replace($context, $options[self::OPTION_SERIALIZER_CONTEXT] ?? []);
         if ($this->isPreloadDtoRequired($className, $options, $request)) {
             $context[AbstractNormalizer::OBJECT_TO_POPULATE] = $this->createPreloadedDto($name, $className, $options, $request);
         }
