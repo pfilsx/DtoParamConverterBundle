@@ -28,9 +28,10 @@ final class DtoParamConverterExtension extends Extension
         $configuration = new Configuration();
         $configArray = $this->processConfiguration($configuration, $configs);
 
-        $container->setParameter('pfilsx.dto_converter.validation_exception_class', $configArray['validation_exception_class']);
         $container->setParameter('pfilsx.dto_converter.normalizer_exception_class', $configArray['normalizer_exception_class']);
+
         $container->setParameter('pfilsx.dto_converter.preload_params', $configArray['preload']);
+        $container->setParameter('pfilsx.dto_converter.validation_params', $configArray['validation']);
         $container->setParameter('pfilsx.dto_converter.strict_types', $configArray['strict_types']);
     }
 }

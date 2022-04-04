@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Pfilsx\DtoParamConverter\Configuration;
 
 use Pfilsx\DtoParamConverter\Contract\NormalizerExceptionInterface;
-use Pfilsx\DtoParamConverter\Contract\ValidationExceptionInterface;
 use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 
 /**
@@ -13,29 +12,20 @@ use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
  */
 final class Configuration
 {
-    private string $validationExceptionClass;
     private string $normalizerExceptionClass;
 
     private PreloadConfiguration $preloadConfiguration;
 
+    private ValidationConfiguration $validationConfiguration;
+
     private StrictTypesConfiguration $strictTypesConfiguration;
 
     public function __construct(
-        string $validationExceptionClass,
         string $normalizerExceptionClass,
         array $preloadParams,
+        array $validationParams,
         array $strictTypes
     ) {
-        if (!class_exists($validationExceptionClass)) {
-            throw new InvalidConfigurationException("Unable to determine class: {$validationExceptionClass}");
-        }
-
-        if (!is_subclass_of($validationExceptionClass, ValidationExceptionInterface::class)) {
-            throw new InvalidConfigurationException('Validation exception class should implements ' . ValidationExceptionInterface::class);
-        }
-
-        $this->validationExceptionClass = $validationExceptionClass;
-
         if (!class_exists($normalizerExceptionClass)) {
             throw new InvalidConfigurationException("Unable to determine class: {$normalizerExceptionClass}");
         }
@@ -48,12 +38,9 @@ final class Configuration
 
         $this->preloadConfiguration = PreloadConfiguration::create($preloadParams);
 
-        $this->strictTypesConfiguration = StrictTypesConfiguration::create($strictTypes);
-    }
+        $this->validationConfiguration = ValidationConfiguration::create($validationParams);
 
-    public function getValidationExceptionClass(): string
-    {
-        return $this->validationExceptionClass;
+        $this->strictTypesConfiguration = StrictTypesConfiguration::create($strictTypes);
     }
 
     public function getNormalizerExceptionClass(): string
@@ -64,6 +51,11 @@ final class Configuration
     public function getPreloadConfiguration(): PreloadConfiguration
     {
         return $this->preloadConfiguration;
+    }
+
+    public function getValidationConfiguration(): ValidationConfiguration
+    {
+        return $this->validationConfiguration;
     }
 
     public function getStrictTypesConfiguration(): StrictTypesConfiguration

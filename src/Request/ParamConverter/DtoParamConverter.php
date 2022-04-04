@@ -51,7 +51,7 @@ final class DtoParamConverter implements ParamConverterInterface
 
     public const OPTION_ENTITY_EXPR = 'entityExpr';
 
-    public const OPTION_FORCE_VALIDATE = 'forceValidate';
+    public const OPTION_VALIDATE = 'validate';
 
     private Configuration $configuration;
 
@@ -151,10 +151,7 @@ final class DtoParamConverter implements ParamConverterInterface
             throw new $exceptionClass($exception->getMessage(), 400, $exception);
         }
 
-        if (
-            $this->validator instanceof ValidatorInterface
-            && ($this->getOption(self::OPTION_FORCE_VALIDATE, false) || $request->getMethod() !== Request::METHOD_GET)
-        ) {
+        if ($this->isValidationRequired($request)) {
             $violations = $this->validator->validate(
                 $object,
                 null,
@@ -412,9 +409,24 @@ final class DtoParamConverter implements ParamConverterInterface
         return $user;
     }
 
+    private function isValidationRequired(Request $request): bool
+    {
+        $validationConfiguration = $this->configuration->getValidationConfiguration();
+
+        if (!$this->validator instanceof ValidatorInterface) {
+            return false;
+        }
+
+        if (($localOption = $this->getOption(self::OPTION_VALIDATE)) !== null && \is_bool($localOption)) {
+            return $localOption;
+        }
+
+        return $validationConfiguration->isEnabled() && !in_array($request->getMethod(), $validationConfiguration->getExcludedMethods(), true);
+    }
+
     private function generateValidationException(ConstraintViolationList $violations): ValidationExceptionInterface
     {
-        $exceptionClass = $this->configuration->getValidationExceptionClass();
+        $exceptionClass = $this->configuration->getValidationConfiguration()->getExceptionClass();
         $exception = new $exceptionClass();
         $exception->setViolations($violations);
 

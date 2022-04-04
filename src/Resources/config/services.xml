@@ -12,9 +12,9 @@
         <service id="Pfilsx\DtoParamConverter\Factory\DtoMapperFactory" alias="pfilsx.dto_converter.mapper_factory"/>
 
         <service id="pfilsx.dto_converter.configuration" class="Pfilsx\DtoParamConverter\Configuration\Configuration">
-            <argument>%pfilsx.dto_converter.validation_exception_class%</argument>
             <argument>%pfilsx.dto_converter.normalizer_exception_class%</argument>
             <argument>%pfilsx.dto_converter.preload_params%</argument>
+            <argument>%pfilsx.dto_converter.validation_params%</argument>
             <argument>%pfilsx.dto_converter.strict_types%</argument>
         </service>
 
