@@ -146,7 +146,7 @@ final class DtoParamConverter implements ParamConverterInterface
 
             throw $this->generateValidationException($violations);
         } catch (NotNormalizableValueException $exception) {
-            $exceptionClass = $this->configuration->getNormalizerExceptionClass();
+            $exceptionClass = $this->configuration->getSerializerConfiguration()->getNormalizerExceptionClass();
 
             throw new $exceptionClass($exception->getMessage(), 400, $exception);
         }
@@ -190,7 +190,7 @@ final class DtoParamConverter implements ParamConverterInterface
 
     private function getSerializerContext(string $name, string $className, Request $request): array
     {
-        $strictTypesConfiguration = $this->configuration->getStrictTypesConfiguration();
+        $strictTypesConfiguration = $this->configuration->getSerializerConfiguration()->getStrictTypesConfiguration();
 
         $context = [
             AbstractObjectNormalizer::DISABLE_TYPE_ENFORCEMENT => !$strictTypesConfiguration->isEnabled()

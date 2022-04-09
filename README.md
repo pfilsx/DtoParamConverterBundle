@@ -145,19 +145,21 @@ You can configure bundle globally via `config/packages/dto_param_converter.yaml`
 
 ```yaml
 dto_param_converter:
-  normalizer_exception_class: 'Pfilsx\DtoParamConverter\Exception\NotNormalizableConverterValueException' # exception class that should be thrown on normalization errors
   preload: # entity preload into dto configuration
     enabled: true # enable/disable entity preloading before request mapping
     methods: ['GET', 'PATCH'] # request methods that require the entity preload
     optional: false # if false the converter will throw NotFoundHttpException on entity for preloading not found otherwise it will ignore preloading
     entity_manager_name: null # entity manager name to use for entity preloading. useful on multiple managers
+  serializer: # request deserialization configuration 
+    service: serializer # serializer should be used for request deserialization
+    normalizer_exception_class: 'Pfilsx\DtoParamConverter\Exception\NotNormalizableConverterValueException' # exception class that should be thrown on normalization errors. not actual after 5.4 symfony/serializer
+    strict_types: # types enforcement on denormalization
+      enabled: true
+      excluded_methods: ['GET'] # excluded request methods for types enforcement
   validation: # dto validation configuration
     enabled: true # enable/disable validation of dto
     excluded_methods: ['GET'] # excluded request methods for validation
     exception_class: 'Pfilsx\DtoParamConverter\Exception\ConverterValidationException' # exception class that should be thrown on validation errors
-  strict_types: # types enforcement on denormalization
-    enabled: true
-    excluded_methods: ['GET'] # excluded request methods for types enforcement
 ```
 
 Or You can configure converter for each action

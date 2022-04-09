@@ -12,7 +12,6 @@ use Doctrine\Persistence\Mapping\ClassMetadata;
 use Doctrine\Persistence\ObjectManager;
 use Pfilsx\DtoParamConverter\Configuration\Configuration;
 use Pfilsx\DtoParamConverter\Exception\ConverterValidationException;
-use Pfilsx\DtoParamConverter\Exception\NotNormalizableConverterValueException;
 use Pfilsx\DtoParamConverter\Factory\DtoMapperFactory;
 use Pfilsx\DtoParamConverter\Request\ParamConverter\DtoParamConverter;
 use Pfilsx\DtoParamConverter\Tests\Fixtures\Dto\TestDto;
@@ -323,10 +322,9 @@ final class DtoParamConverterTest extends TestCase
         $config = $this->createConfiguration(TestDto::class);
 
         $this->initializeConverter(new Configuration(
-            NotNormalizableConverterValueException::class,
             ['enabled' => true, 'methods' => ['GET', 'PATCH', 'OPTIONS']],
+            ['strict_types' => ['enabled' => false]],
             ['enabled' => true, 'exception_class' => ConverterValidationException::class],
-            ['enabled' => false]
         ));
 
         self::assertTrue($this->converter->apply($request, $config));
@@ -500,10 +498,9 @@ final class DtoParamConverterTest extends TestCase
         $reader = new AnnotationReader();
 
         $configuration = $configuration ?? new Configuration(
-            NotNormalizableConverterValueException::class,
             ['enabled' => true, 'methods' => ['GET', 'PATCH', 'OPTIONS']],
-            ['enabled' => true, 'exception_class' => ConverterValidationException::class],
-            ['enabled' => true]
+            ['strict_types' => ['enabled' => true]],
+            ['enabled' => true, 'exception_class' => ConverterValidationException::class]
         );
 
         $this->converter = new DtoParamConverter(
