@@ -1,6 +1,11 @@
 DTO Param Converter Bundle
 ==============
 
+[![PHP Version Require](http://poser.pugx.org/pfilsx/dto-param-converter-bundle/require/php)](https://packagist.org/packages/pfilsx/dto-param-converter-bundle)
+[![Latest Stable Version](http://poser.pugx.org/pfilsx/dto-param-converter-bundle/v)](https://packagist.org/packages/pfilsx/dto-param-converter-bundle)  
+[![Tests](https://github.com/pfilsx/DtoParamConverterBundle/actions/workflows/tests.yaml/badge.svg?branch=master)](https://github.com/pfilsx/DtoParamConverterBundle/actions/workflows/tests.yaml)
+[![Total Downloads](http://poser.pugx.org/pfilsx/dto-param-converter-bundle/downloads)](https://packagist.org/packages/pfilsx/dto-param-converter-bundle)
+
 Introduction
 ------------
 
@@ -140,14 +145,21 @@ You can configure bundle globally via `config/packages/dto_param_converter.yaml`
 
 ```yaml
 dto_param_converter:
-  preload_entity: true # whether converter should preload entity into dto before request mapping
-  strict_preload_entity: true # whether converter should throw an exception if no entity to preload found
-  preload_methods: [ 'PATCH', 'GET' ]  # request methods for entity preloading
-  validation_exception_class: 'Pfilsx\DtoParamConverter\Exception\ConverterValidationException' # exception class should that be thrown on validation errors (if validation enabled)
-  normalizer_exception_class: 'Pfilsx\DtoParamConverter\Exception\NotNormalizableConverterValueException' # exception class that should be thrown on normalization errors
-  strict_types: # types enforcement on denormalization
-    enabled: true
-    excluded_methods: ['GET'] # excluded request methods for types enforcement
+  preload: # entity preload into dto configuration
+    enabled: true # enable/disable entity preloading before request mapping
+    methods: ['GET', 'PATCH'] # request methods that require the entity preload
+    optional: false # if false the converter will throw NotFoundHttpException on entity for preloading not found otherwise it will ignore preloading
+    entity_manager_name: null # entity manager name to use for entity preloading. useful on multiple managers
+  serializer: # request deserialization configuration 
+    service: serializer # serializer should be used for request deserialization
+    normalizer_exception_class: 'Pfilsx\DtoParamConverter\Exception\NotNormalizableConverterValueException' # exception class that should be thrown on normalization errors. not actual after 5.4 symfony/serializer
+    strict_types: # types enforcement on denormalization
+      enabled: true
+      excluded_methods: ['GET'] # excluded request methods for types enforcement
+  validation: # dto validation configuration
+    enabled: true # enable/disable validation of dto
+    excluded_methods: ['GET'] # excluded request methods for validation
+    exception_class: 'Pfilsx\DtoParamConverter\Exception\ConverterValidationException' # exception class that should be thrown on validation errors
 ```
 
 Or You can configure converter for each action
@@ -156,14 +168,14 @@ Or You can configure converter for each action
 /**
 * @ParamConverter("someDto", options={
 *    DtoParamConverter::OPTION_SERIALIZER_CONTEXT: {},
-*    DtoParamConverter::OPTION_VALIDATOR_GROUPS: [],
+*    DtoParamConverter::OPTION_VALIDATOR_GROUPS: {},
 *    DtoParamConverter::OPTION_PRELOAD_ENTITY: true,
 *    DtoParamConverter::OPTION_STRICT_PRELOAD_ENTITY: true,
 *    DtoParamConverter::OPTION_ENTITY_ID_ATTRIBUTE: null,
 *    DtoParamConverter::OPTION_ENTITY_MANAGER: null,
-*    DtoParamConverter::OPTION_ENTITY_MAPPING: []
+*    DtoParamConverter::OPTION_ENTITY_MAPPING: {}
 *    DtoParamConverter::OPTION_ENTITY_EXPR: null,
-*    DtoParamConverter::OPTION_FORCE_VALIDATE: false
+*    DtoParamConverter::OPTION_VALIDATE: false
 * })
 */
 public function someAction(SomeDto $someDto): Response
@@ -180,4 +192,4 @@ This bundle is released under the MIT license.
 Contribute
 ----------
 
-If you'd like to contribute, feel free to propose a pull request! Or just contact me :) 
+If you'd like to contribute, feel free to propose a pull request, create issue or just contact me :) 

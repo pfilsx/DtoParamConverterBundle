@@ -51,7 +51,7 @@ final class DtoParamConverter implements ParamConverterInterface
 
     public const OPTION_ENTITY_EXPR = 'entityExpr';
 
-    public const OPTION_FORCE_VALIDATE = 'forceValidate';
+    public const OPTION_VALIDATE = 'validate';
 
     private Configuration $configuration;
 
@@ -69,17 +69,7 @@ final class DtoParamConverter implements ParamConverterInterface
 
     private ?TokenStorageInterface $tokenStorage;
 
-    private array $defaultOptions = [
-        self::OPTION_SERIALIZER_CONTEXT => [],
-        self::OPTION_VALIDATOR_GROUPS => null,
-        self::OPTION_PRELOAD_ENTITY => true,
-        self::OPTION_STRICT_PRELOAD_ENTITY => true,
-        self::OPTION_ENTITY_ID_ATTRIBUTE => null,
-        self::OPTION_ENTITY_MANAGER => null,
-        self::OPTION_ENTITY_MAPPING => [],
-        self::OPTION_ENTITY_EXPR => null,
-        self::OPTION_FORCE_VALIDATE => false,
-    ];
+    private array $options;
 
     public function __construct(
         Configuration $configuration,
@@ -115,29 +105,31 @@ final class DtoParamConverter implements ParamConverterInterface
         $name = $configuration->getName();
         $className = $configuration->getClass();
 
-        $options = $this->applyConfiguration();
-        $options = array_replace($options, $configuration->getOptions());
+        $this->options = array_replace([
+            self::OPTION_ENTITY_MANAGER => $this->configuration->getPreloadConfiguration()->getManagerName(),
+            self::OPTION_STRICT_PRELOAD_ENTITY => !$this->configuration->getPreloadConfiguration()->isOptional(),
+        ], $configuration->getOptions());
 
         $content = $this->getRequestContent($request);
 
         try {
             if (empty($content)) {
-                $object = $this->isPreloadDtoRequired($className, $options, $request)
-                    ? $this->createPreloadedDto($name, $className, $options, $request)
+                $object = $this->isPreloadDtoRequired($className, $this->getOption(self::OPTION_PRELOAD_ENTITY), $request)
+                    ? $this->createPreloadedDto($name, $className, $request)
                     : new $className();
             } elseif (is_string($content)) {
                 $object = $this->serializer->deserialize(
                     $content,
                     $className,
                     $request->getContentType() ?? $request->getFormat('application/json'),
-                    $this->getSerializerContext($name, $className, $options, $request)
+                    $this->getSerializerContext($name, $className, $request)
                 );
             } else {
                 $object = $this->serializer->denormalize(
                     $content,
                     $className,
                     null,
-                    $this->getSerializerContext($name, $className, $options, $request)
+                    $this->getSerializerContext($name, $className, $request)
                 );
             }
         } catch (PartialDenormalizationException $e) {
@@ -154,19 +146,16 @@ final class DtoParamConverter implements ParamConverterInterface
 
             throw $this->generateValidationException($violations);
         } catch (NotNormalizableValueException $exception) {
-            $exceptionClass = $this->configuration->getNormalizerExceptionClass();
+            $exceptionClass = $this->configuration->getSerializerConfiguration()->getNormalizerExceptionClass();
 
             throw new $exceptionClass($exception->getMessage(), 400, $exception);
         }
 
-        if (
-            $this->validator instanceof ValidatorInterface
-            && ($options[self::OPTION_FORCE_VALIDATE] || $request->getMethod() !== Request::METHOD_GET)
-        ) {
+        if ($this->isValidationRequired($request)) {
             $violations = $this->validator->validate(
                 $object,
                 null,
-                $options[self::OPTION_VALIDATOR_GROUPS] ?? ['Default', $request->attributes->get('_route')]
+                $this->getOption(self::OPTION_VALIDATOR_GROUPS, ['Default', $request->attributes->get('_route')])
             );
 
             if ($violations->count() !== 0) {
@@ -199,18 +188,18 @@ final class DtoParamConverter implements ParamConverterInterface
         }
     }
 
-    private function getSerializerContext(string $name, string $className, array $options, Request $request): array
+    private function getSerializerContext(string $name, string $className, Request $request): array
     {
-        $strictTypesConfiguration = $this->configuration->getStrictTypesConfiguration();
+        $strictTypesConfiguration = $this->configuration->getSerializerConfiguration()->getStrictTypesConfiguration();
 
         $context = [
             AbstractObjectNormalizer::DISABLE_TYPE_ENFORCEMENT => !$strictTypesConfiguration->isEnabled()
                 || in_array($request->getMethod(), $strictTypesConfiguration->getExcludedMethods(), true),
         ];
 
-        $context = array_replace($context, $options[self::OPTION_SERIALIZER_CONTEXT] ?? []);
-        if ($this->isPreloadDtoRequired($className, $options, $request)) {
-            $context[AbstractNormalizer::OBJECT_TO_POPULATE] = $this->createPreloadedDto($name, $className, $options, $request);
+        $context = array_replace($context, $this->getOption(self::OPTION_SERIALIZER_CONTEXT, []));
+        if ($this->isPreloadDtoRequired($className, $this->getOption(self::OPTION_PRELOAD_ENTITY), $request)) {
+            $context[AbstractNormalizer::OBJECT_TO_POPULATE] = $this->createPreloadedDto($name, $className, $request);
         }
         if (defined(DenormalizerInterface::class . '::COLLECT_DENORMALIZATION_ERRORS')) {
             $context[DenormalizerInterface::COLLECT_DENORMALIZATION_ERRORS] = true;
@@ -219,29 +208,38 @@ final class DtoParamConverter implements ParamConverterInterface
         return $context;
     }
 
-    private function isPreloadDtoRequired(string $className, array $options, Request $request): bool
+    private function isPreloadDtoRequired(string $className, ?bool $preloadOption, Request $request): bool
     {
-        if (!in_array($request->getMethod(), $this->configuration->getPreloadMethods(), true)) {
-            return false;
-        }
         if ($this->registry === null) {
             return false;
         }
-        if ($options[self::OPTION_PRELOAD_ENTITY] === false) {
+
+        $preloadConfiguration = $this->configuration->getPreloadConfiguration();
+
+        if ($preloadOption === false) {
             return false;
         }
+
+        if (!$preloadConfiguration->isEnabled() && $preloadOption !== true) {
+            return false;
+        }
+
+        if ($preloadOption !== true && !in_array($request->getMethod(), $preloadConfiguration->getMethods(), true)) {
+            return false;
+        }
+
         $annotation = $this->getClassDtoAnnotation($className);
 
         return $annotation instanceof Dto && !empty($annotation->linkedEntity);
     }
 
-    private function createPreloadedDto(string $name, string $className, array $options, Request $request): object
+    private function createPreloadedDto(string $name, string $className, Request $request): object
     {
         $dto = new $className();
 
-        $entity = $this->findEntity($name, $className, $options, $request);
+        $entity = $this->findEntity($name, $className, $request);
 
-        if ($entity === null && $options[self::OPTION_STRICT_PRELOAD_ENTITY]) {
+        if ($entity === null && $this->getOption(self::OPTION_STRICT_PRELOAD_ENTITY, true)) {
             throw new NotFoundHttpException("Entity for preloading \${$name} not found by the DtoParamConverter.");
         } elseif ($entity !== null) {
             $mapper = $this->mapperFactory->getMapper($className);
@@ -252,17 +250,17 @@ final class DtoParamConverter implements ParamConverterInterface
         return $dto;
     }
 
-    private function findEntity(string $name, string $className, array $options, Request $request): ?object
+    private function findEntity(string $name, string $className, Request $request): ?object
     {
-        if (!empty($expr = $options[self::OPTION_ENTITY_EXPR])) {
-            return $this->findEntityViaExpression($className, $request, $expr, $options);
-        } elseif (!empty($mapping = $options[self::OPTION_ENTITY_MAPPING])) {
-            return $this->findEntityByMapping($className, $request, $mapping, $options);
+        if (!empty($expr = $this->getOption(self::OPTION_ENTITY_EXPR))) {
+            return $this->findEntityViaExpression($className, $request, $expr);
+        } elseif (!empty($mapping = $this->getOption(self::OPTION_ENTITY_MAPPING))) {
+            return $this->findEntityByMapping($className, $request, $mapping);
         } else {
-            $identifierValue = $this->getIdentifierValue($className, $name, $options, $request);
+            $identifierValue = $this->getIdentifierValue($className, $name, $request);
 
             if ($identifierValue !== false) {
-                $repository = $this->getManager($options[self::OPTION_ENTITY_MANAGER], $className)
+                $repository = $this->getManager($className)
                     ->getRepository($this->getEntityClassForDto($className));
 
                 return $repository->find($identifierValue);
@@ -270,17 +268,17 @@ final class DtoParamConverter implements ParamConverterInterface
             $keys = $request->attributes->keys();
             $mapping = $keys ? array_combine($keys, $keys) : [];
 
-            return $this->findEntityByMapping($className, $request, $mapping, $options);
+            return $this->findEntityByMapping($className, $request, $mapping);
         }
     }
 
-    private function findEntityViaExpression(string $className, Request $request, string $expression, array $options): ?object
+    private function findEntityViaExpression(string $className, Request $request, string $expression): ?object
     {
         if ($this->language === null) {
             throw new LogicException('To use the @ParamConverter tag with the "expr" option, you need to install the ExpressionLanguage component.');
         }
         $variables = array_merge($request->attributes->all(), [
-            'repository' => $this->getManager($options[self::OPTION_ENTITY_MANAGER], $className)
+            'repository' => $this->getManager($className)
                 ->getRepository($this->getEntityClassForDto($className)),
             'user' => $this->getUser(),
         ]);
@@ -296,10 +294,10 @@ final class DtoParamConverter implements ParamConverterInterface
         }
     }
 
-    private function findEntityByMapping(string $className, Request $request, array $mapping, array $options): ?object
+    private function findEntityByMapping(string $className, Request $request, array $mapping): ?object
     {
         $criteria = [];
-        $em = $this->getManager($options[self::OPTION_ENTITY_MANAGER], $className);
+        $em = $this->getManager($className);
         $entityClassName = $this->getEntityClassForDto($className);
         $metadata = $em->getClassMetadata($entityClassName);
 
@@ -335,21 +333,20 @@ final class DtoParamConverter implements ParamConverterInterface
     /**
      * @param string  $className
      * @param string  $name
-     * @param array   $options
      * @param Request $request
      *
      * @return false|mixed
      */
-    private function getIdentifierValue(string $className, string $name, array $options, Request $request)
+    private function getIdentifierValue(string $className, string $name, Request $request)
     {
         $routeAttributes = $request->attributes->get('_route_params', []);
 
-        if ($options[self::OPTION_ENTITY_ID_ATTRIBUTE] !== null) {
-            $attributeName = $options[self::OPTION_ENTITY_ID_ATTRIBUTE];
+        if ($this->getOption(self::OPTION_ENTITY_ID_ATTRIBUTE) !== null) {
+            $attributeName = $this->getOption(self::OPTION_ENTITY_ID_ATTRIBUTE);
         } elseif (count($routeAttributes) === 1) {
             $attributeName = array_key_first($routeAttributes);
 
-            $em = $this->getManager($options[self::OPTION_ENTITY_MANAGER], $className);
+            $em = $this->getManager($className);
             $entityClassName = $this->getEntityClassForDto($className);
             $metadata = $em->getClassMetadata($entityClassName);
             if (
@@ -367,15 +364,16 @@ final class DtoParamConverter implements ParamConverterInterface
         if (array_key_exists($attributeName, $routeAttributes)) {
             return $routeAttributes[$attributeName];
         }
-        if ($request->attributes->has('id') && !$options[self::OPTION_ENTITY_ID_ATTRIBUTE]) {
+        if ($request->attributes->has('id') && !$this->getOption(self::OPTION_ENTITY_ID_ATTRIBUTE)) {
             return $request->attributes->get('id');
         }
 
         return false;
     }
 
-    private function getManager(?string $name, string $className): ?ObjectManager
+    private function getManager(string $className): ?ObjectManager
     {
+        $name = $this->getOption(self::OPTION_ENTITY_MANAGER);
         if ($name === null) {
             return $this->registry->getManagerForClass($this->getEntityClassForDto($className));
         }
@@ -411,20 +409,41 @@ final class DtoParamConverter implements ParamConverterInterface
         return $user;
     }
 
-    private function applyConfiguration(): array
+    private function isValidationRequired(Request $request): bool
     {
-        return array_replace($this->defaultOptions, [
-            self::OPTION_PRELOAD_ENTITY => $this->configuration->isPreloadEntity(),
-            self::OPTION_STRICT_PRELOAD_ENTITY => $this->configuration->isStrictPreloadEntity(),
-        ]);
+        $validationConfiguration = $this->configuration->getValidationConfiguration();
+
+        if (!$this->validator instanceof ValidatorInterface) {
+            return false;
+        }
+
+        if (($localOption = $this->getOption(self::OPTION_VALIDATE)) !== null && \is_bool($localOption)) {
+            return $localOption;
+        }
+
+        return $validationConfiguration->isEnabled() && !in_array($request->getMethod(), $validationConfiguration->getExcludedMethods(), true);
     }
 
     private function generateValidationException(ConstraintViolationList $violations): ValidationExceptionInterface
     {
-        $exceptionClass = $this->configuration->getValidationExceptionClass();
+        $exceptionClass = $this->configuration->getValidationConfiguration()->getExceptionClass();
         $exception = new $exceptionClass();
         $exception->setViolations($violations);
 
         throw $exception;
+    }
+
+    /**
+     * @param string $key
+     * @param mixed  $default
+     *
+     * @return mixed
+     */
+    private function getOption(string $key, $default = null)
+    {
+        return \array_key_exists($key, $this->options)
+            ? $this->options[$key]
+            : $default
+        ;
     }
 }

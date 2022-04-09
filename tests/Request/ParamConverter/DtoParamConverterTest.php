@@ -12,7 +12,6 @@ use Doctrine\Persistence\Mapping\ClassMetadata;
 use Doctrine\Persistence\ObjectManager;
 use Pfilsx\DtoParamConverter\Configuration\Configuration;
 use Pfilsx\DtoParamConverter\Exception\ConverterValidationException;
-use Pfilsx\DtoParamConverter\Exception\NotNormalizableConverterValueException;
 use Pfilsx\DtoParamConverter\Factory\DtoMapperFactory;
 use Pfilsx\DtoParamConverter\Request\ParamConverter\DtoParamConverter;
 use Pfilsx\DtoParamConverter\Tests\Fixtures\Dto\TestDto;
@@ -247,6 +246,18 @@ final class DtoParamConverterTest extends TestCase
         ];
     }
 
+    public function testApplyOnGetWithForcedValidation(): void
+    {
+        self::expectException(ConverterValidationException::class);
+
+        $request = $this->createRequest(Request::METHOD_GET, ['title' => 'Test', 'value' => 5]);
+        $config = $this->createConfiguration(TestDto::class, [DtoParamConverter::OPTION_PRELOAD_ENTITY => false, DtoParamConverter::OPTION_VALIDATE => true]);
+
+        $this->initializeConverter();
+
+        $this->converter->apply($request, $config);
+    }
+
     public function testApplyOnPost(): void
     {
         $request = $this->createRequest(Request::METHOD_POST, ['title' => 'Test', 'value' => 20]);
@@ -261,6 +272,22 @@ final class DtoParamConverterTest extends TestCase
         self::assertInstanceOf(TestDto::class, $dto);
 
         self::assertEquals(['title' => 'Test', 'value' => 20], ['title' => $dto->title, 'value' => $dto->value]);
+    }
+
+    public function testApplyOnPostWithDisabledValidation(): void
+    {
+        $request = $this->createRequest(Request::METHOD_POST, ['title' => '', 'value' => 5]);
+        $config = $this->createConfiguration(TestDto::class, [DtoParamConverter::OPTION_VALIDATE => false]);
+
+        $this->initializeConverter();
+
+        self::assertTrue($this->converter->apply($request, $config));
+
+        $dto = $request->attributes->get('arg');
+
+        self::assertInstanceOf(TestDto::class, $dto);
+
+        self::assertEquals(['title' => '', 'value' => 5], ['title' => $dto->title, 'value' => $dto->value]);
     }
 
     /**
@@ -295,12 +322,9 @@ final class DtoParamConverterTest extends TestCase
         $config = $this->createConfiguration(TestDto::class);
 
         $this->initializeConverter(new Configuration(
-            true,
-            true,
-            ['GET', 'PATCH', 'OPTIONS'],
-            ConverterValidationException::class,
-            NotNormalizableConverterValueException::class,
-            ['enabled' => false]
+            ['enabled' => true, 'methods' => ['GET', 'PATCH', 'OPTIONS']],
+            ['strict_types' => ['enabled' => false]],
+            ['enabled' => true, 'exception_class' => ConverterValidationException::class],
         ));
 
         self::assertTrue($this->converter->apply($request, $config));
@@ -474,12 +498,9 @@ final class DtoParamConverterTest extends TestCase
         $reader = new AnnotationReader();
 
         $configuration = $configuration ?? new Configuration(
-            true,
-            true,
-            ['GET', 'PATCH', 'OPTIONS'],
-            ConverterValidationException::class,
-            NotNormalizableConverterValueException::class,
-            ['enabled' => true]
+            ['enabled' => true, 'methods' => ['GET', 'PATCH', 'OPTIONS']],
+            ['strict_types' => ['enabled' => true]],
+            ['enabled' => true, 'exception_class' => ConverterValidationException::class]
         );
 
         $this->converter = new DtoParamConverter(

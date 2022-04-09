@@ -27,14 +27,26 @@ sensio_framework_extra:
     annotations: false
 
 dto_param_converter:
-  strict_types:
-    enabled: true
-    excluded_methods: ['GET']
+  preload:
+    methods: ['GET', 'PATCH']
+  serializer:
+    service: custom_serializer
+    strict_types:
+      enabled: true
+      excluded_methods: ['GET']
 
 services:
   _defaults:
     autowire: true
     autoconfigure: true
+
+  custom_serializer:
+    class: Symfony\Component\Serializer\Serializer
+    arguments:
+      $normalizers:
+        - '@serializer.normalizer.object'
+      $encoders:
+        - '@serializer.encoder.json'
   Pfilsx\DtoParamConverter\Tests\Fixtures\:
     resource: '../'
     exclude:
