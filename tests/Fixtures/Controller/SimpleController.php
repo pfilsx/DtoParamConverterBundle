@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Pfilsx\DtoParamConverter\Tests\Fixtures\Controller;
 
+use Pfilsx\DtoParamConverter\Annotation\DtoResolver;
 use Pfilsx\DtoParamConverter\Request\ParamConverter\DtoParamConverter;
 use Pfilsx\DtoParamConverter\Tests\Fixtures\Dto\TestDto;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Annotation\Route;
@@ -15,7 +15,8 @@ final class SimpleController extends AbstractController
 {
     /**
      * @Route("/test", methods={"GET"})
-     * @ParamConverter("dto", options={
+     *
+     * @DtoResolver({
      *     DtoParamConverter::OPTION_PRELOAD_ENTITY: false
      * })
      *
@@ -30,7 +31,8 @@ final class SimpleController extends AbstractController
 
     /**
      * @Route("/test/strict", methods={"GET"})
-     * @ParamConverter("dto", options={
+     *
+     * @DtoResolver({
      *     DtoParamConverter::OPTION_PRELOAD_ENTITY: false,
      *     DtoParamConverter::OPTION_SERIALIZER_CONTEXT: {"disable_type_enforcement": false}
      * })
@@ -70,7 +72,7 @@ final class SimpleController extends AbstractController
 
     /**
      * @Route("/test", methods={"PATCH"})
-     * @ParamConverter("dto", options={
+     * @DtoResolver({
      *     DtoParamConverter::OPTION_PRELOAD_ENTITY: false
      * })
      *

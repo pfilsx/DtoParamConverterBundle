@@ -17,12 +17,41 @@
             <argument>%pfilsx.dto_converter.validation_params%</argument>
         </service>
 
+        <service id="pfilsx.dto_converter.cache" parent="cache.system" public="false">
+            <tag name="cache.pool"/>
+        </service>
+
+        <service id="pfilsx.dto_converter.controller.route_metadata_provider" class="Pfilsx\DtoParamConverter\Provider\RouteMetadataProvider">
+            <argument type="service" id="pfilsx.dto_converter.cache"/>
+            <argument type="service" id="annotation_reader"/>
+        </service>
+
+        <service id="pfilsx.dto_converter.controller.subscriber" class="Pfilsx\DtoParamConverter\EventSubscriber\ControllerEventSubscriber">
+            <tag name="kernel.event_subscriber"/>
+            <argument type="service" id="pfilsx.dto_converter.controller.route_metadata_provider"/>
+        </service>
+
         <service id="pfilsx.dto_converter.converter"
                  class="Pfilsx\DtoParamConverter\Request\ParamConverter\DtoParamConverter">
             <tag name="request.param_converter" converter="dto"/>
             <argument type="service" id="pfilsx.dto_converter.configuration"/>
             <argument type="service" id="pfilsx.dto_converter.serializer"/>
             <argument type="service" id="annotation_reader"/>
+            <argument type="service" id="pfilsx.dto_converter.mapper_factory"/>
+            <argument type="service" id="validator" on-invalid="null"/>
+            <argument type="service" id="doctrine" on-invalid="null"/>
+            <argument type="service" id="sensio_framework_extra.converter.doctrine.orm.expression_language"
+                      on-invalid="null"/>
+            <argument type="service" id="security.token_storage" on-invalid="null"/>
+        </service>
+
+        <service id="pfilsx.dto_converter.resolver"
+                 class="Pfilsx\DtoParamConverter\Request\ArgumentResolver\DtoArgumentResolver">
+            <tag name="controller.argument_value_resolver" priority="50"/>
+            <argument type="service" id="pfilsx.dto_converter.configuration"/>
+            <argument type="service" id="pfilsx.dto_converter.serializer"/>
+            <argument type="service" id="annotation_reader"/>
+            <argument type="service" id="pfilsx.dto_converter.controller.route_metadata_provider"/>
             <argument type="service" id="pfilsx.dto_converter.mapper_factory"/>
             <argument type="service" id="validator" on-invalid="null"/>
             <argument type="service" id="doctrine" on-invalid="null"/>

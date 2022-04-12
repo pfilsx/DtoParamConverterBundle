@@ -25,6 +25,8 @@ doctrine:
 sensio_framework_extra:
   router:
     annotations: false
+  request:
+    auto_convert: false
 
 dto_param_converter:
   preload:
