@@ -114,7 +114,7 @@ final class RouteMetadataProvider
 
     private function getRealClass(string $class): string
     {
-        if (class_exists(Proxy::class)) {
+        if (interface_exists(Proxy::class)) {
             if (false === $pos = strrpos($class, '\\' . Proxy::MARKER . '\\')) {
                 return $class;
             }
