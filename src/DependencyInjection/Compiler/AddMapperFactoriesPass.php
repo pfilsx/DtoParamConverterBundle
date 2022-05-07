@@ -9,7 +9,7 @@ use Symfony\Component\DependencyInjection\Compiler\ServiceLocatorTagPass;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;
 
-final class DtoParamConverterPass implements CompilerPassInterface
+final class AddMapperFactoriesPass implements CompilerPassInterface
 {
     public function process(ContainerBuilder $container)
     {

@@ -53,6 +53,21 @@ final class SimpleControllerTest extends WebTestCase
     }
 
     /**
+     * @see SimpleController::getWithPreloadViaExpressionAction()
+     */
+    public function testGetWithPreloadViaExpressionAction(): void
+    {
+        $client = self::createClient();
+        $client->request(Request::METHOD_GET, '/test/expression');
+
+        $this->assertResponseIsSuccessful();
+        self::assertEquals([
+            'title' => 'Test1',
+            'value' => 10,
+        ], \json_decode($client->getResponse()->getContent(), true));
+    }
+
+    /**
      * @see SimpleController::postAction()
      */
     public function testPostAction(): void

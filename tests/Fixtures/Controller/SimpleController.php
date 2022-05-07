@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Pfilsx\DtoParamConverter\Tests\Fixtures\Controller;
 
 use Pfilsx\DtoParamConverter\Annotation\DtoResolver;
-use Pfilsx\DtoParamConverter\Request\ParamConverter\DtoParamConverter;
+use Pfilsx\DtoParamConverter\Request\ArgumentResolver\DtoArgumentResolver;
 use Pfilsx\DtoParamConverter\Tests\Fixtures\Dto\TestDto;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -17,7 +17,7 @@ final class SimpleController extends AbstractController
      * @Route("/test", methods={"GET"})
      *
      * @DtoResolver({
-     *     DtoParamConverter::OPTION_PRELOAD_ENTITY: false
+     *     DtoArgumentResolver::OPTION_PRELOAD_ENTITY: false
      * })
      *
      * @param TestDto $dto
@@ -33,8 +33,8 @@ final class SimpleController extends AbstractController
      * @Route("/test/strict", methods={"GET"})
      *
      * @DtoResolver({
-     *     DtoParamConverter::OPTION_PRELOAD_ENTITY: false,
-     *     DtoParamConverter::OPTION_SERIALIZER_CONTEXT: {"disable_type_enforcement": false}
+     *     DtoArgumentResolver::OPTION_PRELOAD_ENTITY: false,
+     *     DtoArgumentResolver::OPTION_SERIALIZER_CONTEXT: {"disable_type_enforcement": false}
      * })
      *
      * @param TestDto $dto
@@ -47,13 +47,29 @@ final class SimpleController extends AbstractController
     }
 
     /**
-     * @Route("/test/{id}", methods={"GET"})
+     * @Route("/test/{id}", methods={"GET"}, requirements={"id": "\d+"})
      *
      * @param TestDto $dto
      *
      * @return JsonResponse
      */
     public function getWithPreloadAction(TestDto $dto): JsonResponse
+    {
+        return $this->json($dto);
+    }
+
+    /**
+     * @Route("/test/expression", methods={"GET"})
+     *
+     * @DtoResolver({
+     *     DtoArgumentResolver::OPTION_ENTITY_EXPR: "repository.find(1)"
+     * })
+     *
+     * @param TestDto $dto
+     *
+     * @return JsonResponse
+     */
+    public function getWithPreloadViaExpressionAction(TestDto $dto): JsonResponse
     {
         return $this->json($dto);
     }
@@ -73,7 +89,7 @@ final class SimpleController extends AbstractController
     /**
      * @Route("/test", methods={"PATCH"})
      * @DtoResolver({
-     *     DtoParamConverter::OPTION_PRELOAD_ENTITY: false
+     *     DtoArgumentResolver::OPTION_PRELOAD_ENTITY: false
      * })
      *
      * @param TestDto $dto
@@ -86,7 +102,7 @@ final class SimpleController extends AbstractController
     }
 
     /**
-     * @Route("/test/{id}", methods={"PATCH"})
+     * @Route("/test/{id}", methods={"PATCH"}, requirements={"id": "\d+"})
      *
      * @param TestDto $dto
      *

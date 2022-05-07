@@ -278,7 +278,7 @@ final class DtoArgumentResolver implements ArgumentValueResolverInterface
     private function findEntityViaExpression(string $className, Request $request, string $expression): ?object
     {
         if ($this->language === null) {
-            throw new LogicException('To use the @ParamConverter tag with the "expr" option, you need to install the ExpressionLanguage component.');
+            throw new LogicException('To use the @DtoResolver tag with the "entityExpr" option, you need to install the ExpressionLanguage component.');
         }
         $variables = array_merge($request->attributes->all(), [
             'repository' => $this->getManager($className)

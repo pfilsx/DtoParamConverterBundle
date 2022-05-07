@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Pfilsx\DtoParamConverter\Tests\Request\ParamConverter;
+namespace Pfilsx\DtoParamConverter\Tests\Request\ArgumentResolver;
 
 use Doctrine\Common\Annotations\AnnotationReader;
 use Doctrine\DBAL\Types\ConversionException;
@@ -13,18 +13,19 @@ use Doctrine\Persistence\ObjectManager;
 use Pfilsx\DtoParamConverter\Configuration\Configuration;
 use Pfilsx\DtoParamConverter\Exception\ConverterValidationException;
 use Pfilsx\DtoParamConverter\Factory\DtoMapperFactory;
-use Pfilsx\DtoParamConverter\Request\ParamConverter\DtoParamConverter;
+use Pfilsx\DtoParamConverter\Provider\RouteMetadataProvider;
+use Pfilsx\DtoParamConverter\Request\ArgumentResolver\DtoArgumentResolver;
 use Pfilsx\DtoParamConverter\Tests\Fixtures\Dto\TestDto;
 use Pfilsx\DtoParamConverter\Tests\Fixtures\DtoMapper\TestDtoMapper;
 use Pfilsx\DtoParamConverter\Tests\Fixtures\Entity\TestEntity;
 use Pfilsx\DtoParamConverter\Tests\Fixtures\Repository\TestEntityRepository;
 use PHPUnit\Framework\MockObject\Stub\Stub;
 use PHPUnit\Framework\TestCase;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Symfony\Component\DependencyInjection\ServiceLocator;
 use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
 use Symfony\Component\ExpressionLanguage\SyntaxError;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpKernel\ControllerMetadata\ArgumentMetadata;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\PropertyInfo\Extractor\ReflectionExtractor;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
@@ -34,7 +35,7 @@ use Symfony\Component\Serializer\Serializer;
 use Symfony\Component\Validator\Mapping\Loader\AnnotationLoader;
 use Symfony\Component\Validator\Validation;
 
-final class DtoParamConverterTest extends TestCase
+final class DtoArgumentResolverTest extends TestCase
 {
     /**
      * @var ManagerRegistry
@@ -54,7 +55,7 @@ final class DtoParamConverterTest extends TestCase
      */
     private $tokenStorage;
 
-    private DtoParamConverter $converter;
+    private DtoArgumentResolver $resolver;
 
     protected function setUp(): void
     {
@@ -72,8 +73,8 @@ final class DtoParamConverterTest extends TestCase
      */
     public function testSupports($className, bool $expectedResult): void
     {
-        $this->initializeConverter();
-        self::assertSame($expectedResult, $this->converter->supports($this->createConfiguration($className)));
+        $this->initializeResolver();
+        self::assertSame($expectedResult, $this->resolver->supports(new Request(), $this->createArgumentMetadataMock($className)));
     }
 
     public function providerTestSupports(): array
@@ -82,7 +83,7 @@ final class DtoParamConverterTest extends TestCase
             'with annotation' => [TestDto::class, true],
             'without annotation' => [\stdClass::class, false],
             'not a classname' => ['', false],
-            'not a string' => [10, false],
+            'not a string' => [null, false],
         ];
     }
 
@@ -100,13 +101,11 @@ final class DtoParamConverterTest extends TestCase
             $request->attributes->set($key, $value);
         }
 
-        $config = $this->createConfiguration(TestDto::class, $converterOptions, 'testDto');
+        $argumentMetadata = $this->createArgumentMetadataMock(TestDto::class, 'testDto');
 
-        $this->initializeConverter();
+        $this->initializeResolver(null, $converterOptions);
 
-        self::assertTrue($this->converter->apply($request, $config));
-
-        $dto = $request->attributes->get('testDto');
+        $dto = $this->resolver->resolve($request, $argumentMetadata)->current();
 
         self::assertInstanceOf(TestDto::class, $dto);
 
@@ -136,13 +135,10 @@ final class DtoParamConverterTest extends TestCase
             $request->attributes->set($key, $value);
         }
 
-        $config = $this->createConfiguration(TestDto::class, $converterOptions);
+        $argumentMetadata = $this->createArgumentMetadataMock(TestDto::class);
+        $this->initializeResolver(null, $converterOptions);
 
-        $this->initializeConverter();
-
-        self::assertTrue($this->converter->apply($request, $config));
-
-        $dto = $request->attributes->get('arg');
+        $dto = $this->resolver->resolve($request, $argumentMetadata)->current();
 
         self::assertInstanceOf(TestDto::class, $dto);
 
@@ -167,8 +163,6 @@ final class DtoParamConverterTest extends TestCase
         $request->attributes->set('_route_params', ['id' => 1]);
         $request->attributes->set('id', 1);
 
-        $config = $this->createConfiguration(TestDto::class, ['entityExpr' => 'repository.findOneByCustomMethod(id)']);
-
         $this->language->expects($this->once())
             ->method('evaluate')
             ->with('repository.findOneByCustomMethod(id)', [
@@ -178,13 +172,13 @@ final class DtoParamConverterTest extends TestCase
                 '_route_params' => ['id' => 1],
                 'user' => null,
             ])
-            ->willReturn($repository->find(1));
+            ->willReturn($repository->find(1))
+        ;
 
-        $this->initializeConverter();
+        $argumentMetadata = $this->createArgumentMetadataMock(TestDto::class);
+        $this->initializeResolver(null, ['entityExpr' => 'repository.findOneByCustomMethod(id)']);
 
-        self::assertTrue($this->converter->apply($request, $config));
-
-        $dto = $request->attributes->get('arg');
+        $dto = $this->resolver->resolve($request, $argumentMetadata)->current();
 
         self::assertInstanceOf(TestDto::class, $dto);
 
@@ -202,15 +196,14 @@ final class DtoParamConverterTest extends TestCase
         $request->attributes->set('_route_params', ['id' => 1]);
         $request->attributes->set('id', 1);
 
-        $config = $this->createConfiguration(TestDto::class, ['entityExpr' => 'repository.findOneByCustomMethod(id)']);
-
         $this->language->expects($this->once())
             ->method('evaluate')
             ->will($this->throwException(new SyntaxError('syntax error message', 10)));
 
-        $this->initializeConverter();
+        $argumentMetadata = $this->createArgumentMetadataMock(TestDto::class);
+        $this->initializeResolver(null, ['entityExpr' => 'repository.findOneByCustomMethod(id)']);
 
-        $this->converter->apply($request, $config);
+        $this->resolver->resolve($request, $argumentMetadata)->current();
     }
 
     /**
@@ -226,15 +219,14 @@ final class DtoParamConverterTest extends TestCase
         $request->attributes->set('_route_params', ['id' => 1]);
         $request->attributes->set('id', 1);
 
-        $config = $this->createConfiguration(TestDto::class, ['entityExpr' => 'repository.findOneByCustomMethod(id)']);
-
         $this->language->expects($this->once())
             ->method('evaluate')
             ->will($stub);
 
-        $this->initializeConverter();
+        $argumentMetadata = $this->createArgumentMetadataMock(TestDto::class);
+        $this->initializeResolver(null, ['entityExpr' => 'repository.findOneByCustomMethod(id)']);
 
-        $this->converter->apply($request, $config);
+        $this->resolver->resolve($request, $argumentMetadata)->current();
     }
 
     public function providerTestApplyOnExpressionFailure(): array
@@ -251,23 +243,21 @@ final class DtoParamConverterTest extends TestCase
         self::expectException(ConverterValidationException::class);
 
         $request = $this->createRequest(Request::METHOD_GET, ['title' => 'Test', 'value' => 5]);
-        $config = $this->createConfiguration(TestDto::class, [DtoParamConverter::OPTION_PRELOAD_ENTITY => false, DtoParamConverter::OPTION_VALIDATE => true]);
 
-        $this->initializeConverter();
+        $argumentMetadata = $this->createArgumentMetadataMock(TestDto::class);
+        $this->initializeResolver(null, [DtoArgumentResolver::OPTION_PRELOAD_ENTITY => false, DtoArgumentResolver::OPTION_VALIDATE => true]);
 
-        $this->converter->apply($request, $config);
+        $this->resolver->resolve($request, $argumentMetadata)->current();
     }
 
     public function testApplyOnPost(): void
     {
         $request = $this->createRequest(Request::METHOD_POST, ['title' => 'Test', 'value' => 20]);
-        $config = $this->createConfiguration(TestDto::class);
 
-        $this->initializeConverter();
+        $argumentMetadata = $this->createArgumentMetadataMock(TestDto::class);
+        $this->initializeResolver();
 
-        self::assertTrue($this->converter->apply($request, $config));
-
-        $dto = $request->attributes->get('arg');
+        $dto = $this->resolver->resolve($request, $argumentMetadata)->current();
 
         self::assertInstanceOf(TestDto::class, $dto);
 
@@ -277,13 +267,11 @@ final class DtoParamConverterTest extends TestCase
     public function testApplyOnPostWithDisabledValidation(): void
     {
         $request = $this->createRequest(Request::METHOD_POST, ['title' => '', 'value' => 5]);
-        $config = $this->createConfiguration(TestDto::class, [DtoParamConverter::OPTION_VALIDATE => false]);
 
-        $this->initializeConverter();
+        $argumentMetadata = $this->createArgumentMetadataMock(TestDto::class);
+        $this->initializeResolver(null, [DtoArgumentResolver::OPTION_VALIDATE => false]);
 
-        self::assertTrue($this->converter->apply($request, $config));
-
-        $dto = $request->attributes->get('arg');
+        $dto = $this->resolver->resolve($request, $argumentMetadata)->current();
 
         self::assertInstanceOf(TestDto::class, $dto);
 
@@ -300,11 +288,11 @@ final class DtoParamConverterTest extends TestCase
         self::expectException(ConverterValidationException::class);
 
         $request = $this->createRequest(Request::METHOD_POST, $requestData);
-        $config = $this->createConfiguration(TestDto::class);
 
-        $this->initializeConverter();
+        $argumentMetadata = $this->createArgumentMetadataMock(TestDto::class);
+        $this->initializeResolver();
 
-        $this->converter->apply($request, $config);
+        $this->resolver->resolve($request, $argumentMetadata)->current();
     }
 
     public function providerTestApplyOnPostWithInvalidData(): array
@@ -319,17 +307,15 @@ final class DtoParamConverterTest extends TestCase
     public function testApplyOnPostWithStrictTypesDisabled(): void
     {
         $request = $this->createRequest(Request::METHOD_POST, ['title' => 'Test', 'value' => '20']);
-        $config = $this->createConfiguration(TestDto::class);
 
-        $this->initializeConverter(new Configuration(
+        $argumentMetadata = $this->createArgumentMetadataMock(TestDto::class);
+        $this->initializeResolver(new Configuration(
             ['enabled' => true, 'methods' => ['GET', 'PATCH', 'OPTIONS']],
             ['strict_types' => ['enabled' => false]],
             ['enabled' => true, 'exception_class' => ConverterValidationException::class],
         ));
 
-        self::assertTrue($this->converter->apply($request, $config));
-
-        $dto = $request->attributes->get('arg');
+        $dto = $this->resolver->resolve($request, $argumentMetadata)->current();
 
         self::assertInstanceOf(TestDto::class, $dto);
 
@@ -348,13 +334,10 @@ final class DtoParamConverterTest extends TestCase
         $request->attributes->set('_route_params', ['id' => 1]);
         $request->attributes->set('id', 1);
 
-        $config = $this->createConfiguration(TestDto::class);
+        $argumentMetadata = $this->createArgumentMetadataMock(TestDto::class);
+        $this->initializeResolver();
 
-        $this->initializeConverter();
-
-        self::assertTrue($this->converter->apply($request, $config));
-
-        $dto = $request->attributes->get('arg');
+        $dto = $this->resolver->resolve($request, $argumentMetadata)->current();
 
         self::assertInstanceOf(TestDto::class, $dto);
 
@@ -378,50 +361,75 @@ final class DtoParamConverterTest extends TestCase
         $request->attributes->set('_route_params', ['id' => 1]);
         $request->attributes->set('id', 1);
 
-        $config = $this->createConfiguration(TestDto::class);
+        $argumentMetadata = $this->createArgumentMetadataMock(TestDto::class);
+        $this->initializeResolver();
 
-        $this->initializeConverter();
-
-        self::assertTrue($this->converter->apply($request, $config));
-
-        $dto = $request->attributes->get('arg');
+        $dto = $this->resolver->resolve($request, $argumentMetadata)->current();
 
         self::assertInstanceOf(TestDto::class, $dto);
 
         self::assertEquals(['title' => 'Test1', 'value' => 10], ['title' => $dto->title, 'value' => $dto->value]);
     }
 
-    private function createConfiguration($class = null, array $options = [], $name = 'arg', $isOptional = false): ParamConverter
+    private function initializeResolver(?Configuration $configuration = null, array $routeOptions = []): void
     {
-        $methods = ['getClass', 'getAliasName', 'getOptions', 'getName', 'allowArray'];
-        if ($isOptional !== null) {
-            $methods[] = 'isOptional';
-        }
-        $config = $this
-            ->getMockBuilder('Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter')
-            ->onlyMethods($methods)
+        $reader = new AnnotationReader();
+
+        $configuration = $configuration ?? new Configuration(
+                ['enabled' => true, 'methods' => ['GET', 'PATCH', 'OPTIONS']],
+                ['strict_types' => ['enabled' => true]],
+                ['enabled' => true, 'exception_class' => ConverterValidationException::class]
+        );
+
+        $this->resolver = new DtoArgumentResolver(
+            $configuration,
+            new Serializer([new ObjectNormalizer(null, null, null, new ReflectionExtractor())], [new JsonEncoder()]),
+            $reader,
+            $this->initializeRouteMetadataProviderMock($routeOptions),
+            new DtoMapperFactory($this->serviceLocator),
+            Validation::createValidatorBuilder()->addLoader(new AnnotationLoader($reader))->getValidator(),
+            $this->registry,
+            $this->language,
+            $this->tokenStorage
+        );
+    }
+
+    private function createArgumentMetadataMock(?string $className, string $name = 'arg'): ArgumentMetadata
+    {
+        $metadata = $this
+            ->getMockBuilder(ArgumentMetadata::class)
             ->disableOriginalConstructor()
             ->getMock();
-        if ($options !== null) {
-            $config->expects($this->any())
-                ->method('getOptions')
-                ->willReturn($options);
-        }
-        if ($class !== null) {
-            $config->expects($this->any())
-                ->method('getClass')
-                ->willReturn($class);
-        }
-        $config->expects($this->any())
-            ->method('getName')
-            ->willReturn($name);
-        if ($isOptional !== null) {
-            $config->expects($this->any())
-                ->method('isOptional')
-                ->willReturn($isOptional);
-        }
 
-        return $config;
+        $metadata
+            ->expects($this->any())
+            ->method('getType')
+            ->willReturn($className)
+        ;
+
+        $metadata
+            ->expects($this->any())
+            ->method('getName')
+            ->willReturn($name)
+        ;
+
+        return $metadata;
+    }
+
+    private function initializeRouteMetadataProviderMock(array $routeOptions = []): RouteMetadataProvider
+    {
+        $provider = $this->getMockBuilder(RouteMetadataProvider::class)
+            ->disableOriginalConstructor()
+            ->disableOriginalClone()
+            ->getMock();
+
+        $provider
+            ->expects($this->any())
+            ->method('getMetadata')
+            ->willReturn($routeOptions)
+        ;
+
+        return $provider;
     }
 
     private function createRequest(string $method = 'GET', array $parameters = []): Request
@@ -491,27 +499,5 @@ final class DtoParamConverterTest extends TestCase
             ->method('getManagerForClass')
             ->with($expectedEntityClassName)
             ->willReturn($managerMock);
-    }
-
-    private function initializeConverter(?Configuration $configuration = null): void
-    {
-        $reader = new AnnotationReader();
-
-        $configuration = $configuration ?? new Configuration(
-            ['enabled' => true, 'methods' => ['GET', 'PATCH', 'OPTIONS']],
-            ['strict_types' => ['enabled' => true]],
-            ['enabled' => true, 'exception_class' => ConverterValidationException::class]
-        );
-
-        $this->converter = new DtoParamConverter(
-            $configuration,
-            new Serializer([new ObjectNormalizer(null, null, null, new ReflectionExtractor())], [new JsonEncoder()]),
-            $reader,
-            new DtoMapperFactory($this->serviceLocator),
-            Validation::createValidatorBuilder()->addLoader(new AnnotationLoader($reader))->getValidator(),
-            $this->registry,
-            $this->language,
-            $this->tokenStorage
-        );
     }
 }
