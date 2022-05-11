@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Pfilsx\DtoParamConverter\Tests\Request\ArgumentResolver;
+namespace Pfilsx\DtoParamConverter\Tests\Unit\Request\ArgumentResolver;
 
 use Doctrine\Common\Annotations\AnnotationReader;
 use Doctrine\DBAL\Types\ConversionException;

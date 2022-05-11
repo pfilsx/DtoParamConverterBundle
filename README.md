@@ -23,7 +23,6 @@ Requirement
 -----------
 * PHP 7.4+
 * Symfony 4.4+|5.3+|6.0+
-* SensioFrameworkExtraBundle
 
 Installation
 ------------
@@ -38,7 +37,7 @@ You need to add the following lines in your deps :
 ```json
 {
     "require": {
-        "pfilsx/dto-param-converter-bundle": "^1.0"
+        "pfilsx/dto-param-converter-bundle": "^2.0"
     }
 }
 ```
@@ -166,16 +165,16 @@ Or You can configure converter for each action
 
 ```php
 /**
-* @ParamConverter("someDto", options={
-*    DtoParamConverter::OPTION_SERIALIZER_CONTEXT: {},
-*    DtoParamConverter::OPTION_VALIDATOR_GROUPS: {},
-*    DtoParamConverter::OPTION_PRELOAD_ENTITY: true,
-*    DtoParamConverter::OPTION_STRICT_PRELOAD_ENTITY: true,
-*    DtoParamConverter::OPTION_ENTITY_ID_ATTRIBUTE: null,
-*    DtoParamConverter::OPTION_ENTITY_MANAGER: null,
-*    DtoParamConverter::OPTION_ENTITY_MAPPING: {}
-*    DtoParamConverter::OPTION_ENTITY_EXPR: null,
-*    DtoParamConverter::OPTION_VALIDATE: false
+* @DtoResolver("someDto", options={
+*    DtoArgumentResolver::OPTION_SERIALIZER_CONTEXT: {},
+*    DtoArgumentResolver::OPTION_VALIDATOR_GROUPS: {},
+*    DtoArgumentResolver::OPTION_PRELOAD_ENTITY: true,
+*    DtoArgumentResolver::OPTION_STRICT_PRELOAD_ENTITY: true,
+*    DtoArgumentResolver::OPTION_ENTITY_ID_ATTRIBUTE: null,
+*    DtoArgumentResolver::OPTION_ENTITY_MANAGER: null,
+*    DtoArgumentResolver::OPTION_ENTITY_MAPPING: {}
+*    DtoArgumentResolver::OPTION_ENTITY_EXPR: null,
+*    DtoArgumentResolver::OPTION_VALIDATE: false
 * })
 */
 public function someAction(SomeDto $someDto): Response
