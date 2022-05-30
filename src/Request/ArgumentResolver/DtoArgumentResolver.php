@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Pfilsx\DtoParamConverter\Request\ArgumentResolver;
 
-use Doctrine\Common\Annotations\Reader;
 use Doctrine\DBAL\Types\ConversionException;
 use Doctrine\ORM\NoResultException;
 use Doctrine\Persistence\ManagerRegistry;
@@ -14,8 +13,8 @@ use Pfilsx\DtoParamConverter\Annotation\Dto;
 use Pfilsx\DtoParamConverter\Configuration\Configuration;
 use Pfilsx\DtoParamConverter\Contract\ValidationExceptionInterface;
 use Pfilsx\DtoParamConverter\Factory\DtoMapperFactory;
+use Pfilsx\DtoParamConverter\Provider\DtoMetadataProvider;
 use Pfilsx\DtoParamConverter\Provider\RouteMetadataProvider;
-use ReflectionClass;
 use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
 use Symfony\Component\ExpressionLanguage\SyntaxError;
 use Symfony\Component\HttpFoundation\Request;
@@ -58,7 +57,7 @@ final class DtoArgumentResolver implements ArgumentValueResolverInterface
 
     private SerializerInterface $serializer;
 
-    private Reader $reader;
+    private DtoMetadataProvider $dtoMetadataProvider;
 
     private RouteMetadataProvider $routeMetadataProvider;
 
@@ -77,7 +76,7 @@ final class DtoArgumentResolver implements ArgumentValueResolverInterface
     public function __construct(
         Configuration $configuration,
         SerializerInterface $serializer,
-        Reader $reader,
+        DtoMetadataProvider $dtoMetadataProvider,
         RouteMetadataProvider $routeMetadataProvider,
         DtoMapperFactory $mapperFactory,
         ?ValidatorInterface $validator = null,
@@ -87,7 +86,7 @@ final class DtoArgumentResolver implements ArgumentValueResolverInterface
     ) {
         $this->configuration = $configuration;
         $this->serializer = $serializer;
-        $this->reader = $reader;
+        $this->dtoMetadataProvider = $dtoMetadataProvider;
         $this->mapperFactory = $mapperFactory;
         $this->validator = $validator;
         $this->registry = $registry;
@@ -233,7 +232,7 @@ final class DtoArgumentResolver implements ArgumentValueResolverInterface
 
         $annotation = $this->getClassDtoAnnotation($className);
 
-        return $annotation instanceof Dto && !empty($annotation->linkedEntity);
+        return $annotation instanceof Dto && !empty($annotation->getLinkedEntity());
     }
 
     private function createPreloadedDto(string $name, string $className, Request $request): object
@@ -325,7 +324,7 @@ final class DtoArgumentResolver implements ArgumentValueResolverInterface
 
         if (
             $annotation instanceof Dto
-            && !empty(($entityClass = $annotation->linkedEntity))
+            && !empty(($entityClass = $annotation->getLinkedEntity()))
             && class_exists($entityClass)) {
             return $entityClass;
         }
@@ -386,13 +385,7 @@ final class DtoArgumentResolver implements ArgumentValueResolverInterface
 
     private function getClassDtoAnnotation(string $className): ?Dto
     {
-        try {
-            $refClass = new ReflectionClass($className);
-        } catch (\ReflectionException $e) {
-            return null;
-        }
-
-        return $this->reader->getClassAnnotation($refClass, Dto::class);
+        return $this->dtoMetadataProvider->getDtoMetadata($className);
     }
 
     private function getUser(): ?UserInterface

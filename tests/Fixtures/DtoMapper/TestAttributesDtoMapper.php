@@ -5,19 +5,19 @@ declare(strict_types=1);
 namespace Pfilsx\DtoParamConverter\Tests\Fixtures\DtoMapper;
 
 use Pfilsx\DtoParamConverter\Contract\DtoMapperInterface;
-use Pfilsx\DtoParamConverter\Tests\Fixtures\Dto\TestDto;
+use Pfilsx\DtoParamConverter\Tests\Fixtures\Dto\TestAttributesDto;
 use Pfilsx\DtoParamConverter\Tests\Fixtures\Entity\TestEntity;
 
-final class TestDtoMapper implements DtoMapperInterface
+final class TestAttributesDtoMapper implements DtoMapperInterface
 {
     public static function getDtoClassName(): string
     {
-        return TestDto::class;
+        return TestAttributesDto::class;
     }
 
     /**
-     * @param TestEntity $entity
-     * @param TestDto    $dto
+     * @param TestEntity        $entity
+     * @param TestAttributesDto $dto
      */
     public function mapToDto($entity, $dto): void
     {

@@ -13,6 +13,7 @@ use Doctrine\Persistence\ObjectManager;
 use Pfilsx\DtoParamConverter\Configuration\Configuration;
 use Pfilsx\DtoParamConverter\Exception\ConverterValidationException;
 use Pfilsx\DtoParamConverter\Factory\DtoMapperFactory;
+use Pfilsx\DtoParamConverter\Provider\DtoMetadataProvider;
 use Pfilsx\DtoParamConverter\Provider\RouteMetadataProvider;
 use Pfilsx\DtoParamConverter\Request\ArgumentResolver\DtoArgumentResolver;
 use Pfilsx\DtoParamConverter\Tests\Fixtures\Dto\TestDto;
@@ -384,7 +385,7 @@ final class DtoArgumentResolverTest extends TestCase
         $this->resolver = new DtoArgumentResolver(
             $configuration,
             new Serializer([new ObjectNormalizer(null, null, null, new ReflectionExtractor())], [new JsonEncoder()]),
-            $reader,
+            new DtoMetadataProvider($reader),
             $this->initializeRouteMetadataProviderMock($routeOptions),
             new DtoMapperFactory($this->serviceLocator),
             Validation::createValidatorBuilder()->addLoader(new AnnotationLoader($reader))->getValidator(),
