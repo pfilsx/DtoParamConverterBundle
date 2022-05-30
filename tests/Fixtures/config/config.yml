@@ -21,11 +21,6 @@ doctrine:
         prefix: 'Pfilsx\DtoParamConverter\Tests\Fixtures\Entity'
         alias: Pfilsx\DtoParamConverter\Tests\Fixtures\Entity
 
-
-sensio_framework_extra:
-  router:
-    annotations: false
-
 dto_param_converter:
   preload:
     methods: ['GET', 'PATCH']

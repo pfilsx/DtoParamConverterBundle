@@ -2,9 +2,8 @@
 
 declare(strict_types=1);
 
-namespace Pfilsx\DtoParamConverter\Request\ParamConverter;
+namespace Pfilsx\DtoParamConverter\Request\ArgumentResolver;
 
-use Doctrine\Common\Annotations\Reader;
 use Doctrine\DBAL\Types\ConversionException;
 use Doctrine\ORM\NoResultException;
 use Doctrine\Persistence\ManagerRegistry;
@@ -14,12 +13,13 @@ use Pfilsx\DtoParamConverter\Annotation\Dto;
 use Pfilsx\DtoParamConverter\Configuration\Configuration;
 use Pfilsx\DtoParamConverter\Contract\ValidationExceptionInterface;
 use Pfilsx\DtoParamConverter\Factory\DtoMapperFactory;
-use ReflectionClass;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
-use Sensio\Bundle\FrameworkExtraBundle\Request\ParamConverter\ParamConverterInterface;
+use Pfilsx\DtoParamConverter\Provider\DtoMetadataProvider;
+use Pfilsx\DtoParamConverter\Provider\RouteMetadataProvider;
 use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
 use Symfony\Component\ExpressionLanguage\SyntaxError;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpKernel\Controller\ArgumentValueResolverInterface;
+use Symfony\Component\HttpKernel\ControllerMetadata\ArgumentMetadata;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
@@ -33,7 +33,7 @@ use Symfony\Component\Validator\ConstraintViolation;
 use Symfony\Component\Validator\ConstraintViolationList;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
-final class DtoParamConverter implements ParamConverterInterface
+final class DtoArgumentResolver implements ArgumentValueResolverInterface
 {
     public const OPTION_SERIALIZER_CONTEXT = 'serializerContext';
 
@@ -57,7 +57,9 @@ final class DtoParamConverter implements ParamConverterInterface
 
     private SerializerInterface $serializer;
 
-    private Reader $reader;
+    private DtoMetadataProvider $dtoMetadataProvider;
+
+    private RouteMetadataProvider $routeMetadataProvider;
 
     private DtoMapperFactory $mapperFactory;
 
@@ -74,41 +76,43 @@ final class DtoParamConverter implements ParamConverterInterface
     public function __construct(
         Configuration $configuration,
         SerializerInterface $serializer,
-        Reader $reader,
+        DtoMetadataProvider $dtoMetadataProvider,
+        RouteMetadataProvider $routeMetadataProvider,
         DtoMapperFactory $mapperFactory,
         ?ValidatorInterface $validator = null,
         ?ManagerRegistry $registry = null,
         ?ExpressionLanguage $expressionLanguage = null,
         ?TokenStorageInterface $tokenStorage = null
     ) {
+        $this->configuration = $configuration;
         $this->serializer = $serializer;
-        $this->reader = $reader;
+        $this->dtoMetadataProvider = $dtoMetadataProvider;
         $this->mapperFactory = $mapperFactory;
         $this->validator = $validator;
         $this->registry = $registry;
         $this->language = $expressionLanguage;
         $this->tokenStorage = $tokenStorage;
-        $this->configuration = $configuration;
+        $this->routeMetadataProvider = $routeMetadataProvider;
     }
 
-    public function supports(ParamConverter $configuration): bool
+    public function supports(Request $request, ArgumentMetadata $argument): bool
     {
-        if (!is_string($configuration->getClass())) {
+        if (!is_string($type = $argument->getType())) {
             return false;
         }
 
-        return $this->getClassDtoAnnotation($configuration->getClass()) instanceof Dto;
+        return $this->getClassDtoAnnotation($type) instanceof Dto;
     }
 
-    public function apply(Request $request, ParamConverter $configuration): bool
+    public function resolve(Request $request, ArgumentMetadata $argument): iterable
     {
-        $name = $configuration->getName();
-        $className = $configuration->getClass();
+        $name = $argument->getName();
+        $className = $argument->getType();
 
         $this->options = array_replace([
             self::OPTION_ENTITY_MANAGER => $this->configuration->getPreloadConfiguration()->getManagerName(),
             self::OPTION_STRICT_PRELOAD_ENTITY => !$this->configuration->getPreloadConfiguration()->isOptional(),
-        ], $configuration->getOptions());
+        ], $this->getRouteOptions($request->attributes->get('_route')));
 
         $content = $this->getRequestContent($request);
 
@@ -163,9 +167,7 @@ final class DtoParamConverter implements ParamConverterInterface
             }
         }
 
-        $request->attributes->set($name, $object);
-
-        return true;
+        yield $object;
     }
 
     /**
@@ -230,7 +232,7 @@ final class DtoParamConverter implements ParamConverterInterface
 
         $annotation = $this->getClassDtoAnnotation($className);
 
-        return $annotation instanceof Dto && !empty($annotation->linkedEntity);
+        return $annotation instanceof Dto && !empty($annotation->getLinkedEntity());
     }
 
     private function createPreloadedDto(string $name, string $className, Request $request): object
@@ -275,7 +277,7 @@ final class DtoParamConverter implements ParamConverterInterface
     private function findEntityViaExpression(string $className, Request $request, string $expression): ?object
     {
         if ($this->language === null) {
-            throw new LogicException('To use the @ParamConverter tag with the "expr" option, you need to install the ExpressionLanguage component.');
+            throw new LogicException('To use the @DtoResolver tag with the "entityExpr" option, you need to install the ExpressionLanguage component.');
         }
         $variables = array_merge($request->attributes->all(), [
             'repository' => $this->getManager($className)
@@ -322,7 +324,7 @@ final class DtoParamConverter implements ParamConverterInterface
 
         if (
             $annotation instanceof Dto
-            && !empty(($entityClass = $annotation->linkedEntity))
+            && !empty(($entityClass = $annotation->getLinkedEntity()))
             && class_exists($entityClass)) {
             return $entityClass;
         }
@@ -383,13 +385,7 @@ final class DtoParamConverter implements ParamConverterInterface
 
     private function getClassDtoAnnotation(string $className): ?Dto
     {
-        try {
-            $refClass = new ReflectionClass($className);
-        } catch (\ReflectionException $e) {
-            return null;
-        }
-
-        return $this->reader->getClassAnnotation($refClass, Dto::class);
+        return $this->dtoMetadataProvider->getDtoMetadata($className);
     }
 
     private function getUser(): ?UserInterface
@@ -444,6 +440,11 @@ final class DtoParamConverter implements ParamConverterInterface
         return \array_key_exists($key, $this->options)
             ? $this->options[$key]
             : $default
-        ;
+            ;
+    }
+
+    private function getRouteOptions(?string $routeName): array
+    {
+        return $this->routeMetadataProvider->getMetadata((string) $routeName);
     }
 }
