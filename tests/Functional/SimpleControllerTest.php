@@ -17,12 +17,27 @@ final class SimpleControllerTest extends WebTestCase
     public function testGetAction(): void
     {
         $client = self::createClient();
-        $client->request(Request::METHOD_GET, '/test', ['title' => 'Test title', 'value' => 20]);
+        $client->request(Request::METHOD_GET, '/test', ['title' => 'Test title']);
 
         $this->assertResponseIsSuccessful();
         self::assertEquals([
             'title' => 'Test title',
-            'value' => 20,
+            'value' => null,
+        ], \json_decode($client->getResponse()->getContent(), true));
+    }
+
+    /**
+     * @see SimpleController::getActionWithPreloadDisabledByAnnotation()
+     */
+    public function testGetActionWithPreloadDisabledByAnnotation(): void
+    {
+        $client = self::createClient();
+        $client->request(Request::METHOD_GET, '/test/disabled', ['title' => 'Test title']);
+
+        $this->assertResponseIsSuccessful();
+        self::assertEquals([
+            'title' => 'Test title',
+            'value' => null,
         ], \json_decode($client->getResponse()->getContent(), true));
     }
 

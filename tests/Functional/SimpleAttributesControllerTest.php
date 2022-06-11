@@ -20,12 +20,27 @@ final class SimpleAttributesControllerTest extends WebTestCase
     public function testGetAction(): void
     {
         $client = self::createClient();
-        $client->request(Request::METHOD_GET, '/attributes-test', ['title' => 'Test title', 'value' => 20]);
+        $client->request(Request::METHOD_GET, '/attributes-test', ['title' => 'Test title']);
 
         $this->assertResponseIsSuccessful();
         self::assertEquals([
             'title' => 'Test title',
-            'value' => 20,
+            'value' => null,
+        ], \json_decode($client->getResponse()->getContent(), true));
+    }
+
+    /**
+     * @see SimpleAttributesController::getActionWithPreloadDisabledByAnnotation()
+     */
+    public function testGetActionWithPreloadDisabledByAnnotation(): void
+    {
+        $client = self::createClient();
+        $client->request(Request::METHOD_GET, '/attributes-test/disabled', ['title' => 'Test title']);
+
+        $this->assertResponseIsSuccessful();
+        self::assertEquals([
+            'title' => 'Test title',
+            'value' => null,
         ], \json_decode($client->getResponse()->getContent(), true));
     }
 

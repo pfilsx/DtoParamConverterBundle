@@ -17,13 +17,21 @@ final class Dto
 {
     private ?string $linkedEntity;
 
-    public function __construct(?string $linkedEntity = null)
+    private ?bool $preload;
+
+    public function __construct(?string $linkedEntity = null, ?bool $preload = null)
     {
         $this->linkedEntity = $linkedEntity;
+        $this->preload = $preload;
     }
 
     public function getLinkedEntity(): ?string
     {
         return $this->linkedEntity;
+    }
+
+    public function isPreload(): ?bool
+    {
+        return $this->preload;
     }
 }

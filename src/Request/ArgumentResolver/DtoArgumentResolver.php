@@ -216,23 +216,28 @@ final class DtoArgumentResolver implements ArgumentValueResolverInterface
             return false;
         }
 
-        $preloadConfiguration = $this->configuration->getPreloadConfiguration();
-
         if ($preloadOption === false) {
-            return false;
-        }
-
-        if (!$preloadConfiguration->isEnabled() && $preloadOption !== true) {
-            return false;
-        }
-
-        if ($preloadOption !== true && !in_array($request->getMethod(), $preloadConfiguration->getMethods(), true)) {
             return false;
         }
 
         $annotation = $this->getClassDtoAnnotation($className);
 
-        return $annotation instanceof Dto && !empty($annotation->getLinkedEntity());
+        if (!$annotation instanceof Dto || empty($annotation->getLinkedEntity())) {
+            return false;
+        }
+
+        if ($preloadOption !== null) {
+            return $preloadOption;
+        }
+
+        if ($annotation->isPreload() !== null) {
+            return $annotation->isPreload();
+        }
+
+        $preloadConfiguration = $this->configuration->getPreloadConfiguration();
+
+        return $preloadConfiguration->isEnabled()
+            && in_array($request->getMethod(), $preloadConfiguration->getMethods(), true);
     }
 
     private function createPreloadedDto(string $name, string $className, Request $request): object
