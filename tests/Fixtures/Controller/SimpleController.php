@@ -6,6 +6,7 @@ namespace Pfilsx\DtoParamConverter\Tests\Fixtures\Controller;
 
 use Pfilsx\DtoParamConverter\Annotation\DtoResolver;
 use Pfilsx\DtoParamConverter\Request\ArgumentResolver\DtoArgumentResolver;
+use Pfilsx\DtoParamConverter\Tests\Fixtures\Dto\TestAllDisabledDto;
 use Pfilsx\DtoParamConverter\Tests\Fixtures\Dto\TestDto;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -25,6 +26,18 @@ final class SimpleController extends AbstractController
      * @return JsonResponse
      */
     public function getAction(TestDto $dto): JsonResponse
+    {
+        return $this->json($dto);
+    }
+
+    /**
+     * @Route("/test/disabled", methods={"GET"})
+     *
+     * @param TestAllDisabledDto $dto
+     *
+     * @return JsonResponse
+     */
+    public function getActionWithPreloadDisabledInDto(TestAllDisabledDto $dto): JsonResponse
     {
         return $this->json($dto);
     }
@@ -82,6 +95,18 @@ final class SimpleController extends AbstractController
      * @return JsonResponse
      */
     public function postAction(TestDto $dto): JsonResponse
+    {
+        return $this->json($dto);
+    }
+
+    /**
+     * @Route("/test/disabled", methods={"POST"})
+     *
+     * @param TestAllDisabledDto $dto
+     *
+     * @return JsonResponse
+     */
+    public function postActionWithValidationDisabledInDto(TestAllDisabledDto $dto): JsonResponse
     {
         return $this->json($dto);
     }

@@ -16,10 +16,11 @@ final class TestDto
     /**
      * @Assert\NotBlank()
      */
-    public string $title;
+    public ?string $title = null;
 
     /**
+     * @Assert\NotNull()
      * @Assert\GreaterThanOrEqual(10)
      */
-    public int $value;
+    public ?int $value = null;
 }
