@@ -22,7 +22,7 @@ final class SimpleAttributesController extends AbstractController
     }
 
     #[Route(path: "/attributes-test/disabled", methods: ["GET"])]
-    public function getActionWithPreloadDisabledByAnnotation(TestAllDisabledAttributesDto $dto): JsonResponse
+    public function getActionWithPreloadDisabledInDto(TestAllDisabledAttributesDto $dto): JsonResponse
     {
         return $this->json($dto);
     }
@@ -49,6 +49,12 @@ final class SimpleAttributesController extends AbstractController
 
     #[Route(path: "/attributes-test", methods: ["POST"])]
     public function postAction(TestAttributesDto $dto): JsonResponse
+    {
+        return $this->json($dto);
+    }
+
+    #[Route(path: "/attributes-test/disabled", methods: ["POST"])]
+    public function postActionWithValidationDisabledInDto(TestAllDisabledAttributesDto $dto): JsonResponse
     {
         return $this->json($dto);
     }

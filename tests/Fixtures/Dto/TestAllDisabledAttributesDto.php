@@ -8,7 +8,7 @@ use Pfilsx\DtoParamConverter\Annotation\Dto;
 use Pfilsx\DtoParamConverter\Tests\Fixtures\Entity\TestEntity;
 use Symfony\Component\Validator\Constraints as Assert;
 
-#[Dto(linkedEntity: TestEntity::class, preload: false)]
+#[Dto(linkedEntity: TestEntity::class, preload: false, validate: false)]
 final class TestAllDisabledAttributesDto
 {
     #[Assert\NotBlank]

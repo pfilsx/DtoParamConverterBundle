@@ -19,10 +19,13 @@ final class Dto
 
     private ?bool $preload;
 
-    public function __construct(?string $linkedEntity = null, ?bool $preload = null)
+    private ?bool $validate;
+
+    public function __construct(?string $linkedEntity = null, ?bool $preload = null, ?bool $validate = null)
     {
         $this->linkedEntity = $linkedEntity;
         $this->preload = $preload;
+        $this->validate = $validate;
     }
 
     public function getLinkedEntity(): ?string
@@ -33,5 +36,10 @@ final class Dto
     public function isPreload(): ?bool
     {
         return $this->preload;
+    }
+
+    public function isValidate(): ?bool
+    {
+        return $this->validate;
     }
 }

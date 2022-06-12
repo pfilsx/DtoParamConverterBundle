@@ -30,9 +30,9 @@ final class SimpleAttributesControllerTest extends WebTestCase
     }
 
     /**
-     * @see SimpleAttributesController::getActionWithPreloadDisabledByAnnotation()
+     * @see SimpleAttributesController::getActionWithPreloadDisabledInDto()
      */
-    public function testGetActionWithPreloadDisabledByAnnotation(): void
+    public function testGetActionWithPreloadDisabledInDto(): void
     {
         $client = self::createClient();
         $client->request(Request::METHOD_GET, '/attributes-test/disabled', ['title' => 'Test title']);
@@ -97,6 +97,21 @@ final class SimpleAttributesControllerTest extends WebTestCase
         self::assertEquals([
             'title' => 'Test title',
             'value' => 50,
+        ], \json_decode($client->getResponse()->getContent(), true));
+    }
+
+    /**
+     * @see SimpleAttributesController::postActionWithValidationDisabledInDto()
+     */
+    public function testPostActionWithValidationDisabledInDto(): void
+    {
+        $client = self::createClient();
+        $client->jsonRequest(Request::METHOD_POST, '/attributes-test/disabled', ['title' => 'Test title']);
+
+        $this->assertResponseIsSuccessful();
+        self::assertEquals([
+            'title' => 'Test title',
+            'value' => null,
         ], \json_decode($client->getResponse()->getContent(), true));
     }
 

@@ -37,7 +37,7 @@ final class SimpleController extends AbstractController
      *
      * @return JsonResponse
      */
-    public function getActionWithPreloadDisabledByAnnotation(TestAllDisabledDto $dto): JsonResponse
+    public function getActionWithPreloadDisabledInDto(TestAllDisabledDto $dto): JsonResponse
     {
         return $this->json($dto);
     }
@@ -95,6 +95,18 @@ final class SimpleController extends AbstractController
      * @return JsonResponse
      */
     public function postAction(TestDto $dto): JsonResponse
+    {
+        return $this->json($dto);
+    }
+
+    /**
+     * @Route("/test/disabled", methods={"POST"})
+     *
+     * @param TestAllDisabledDto $dto
+     *
+     * @return JsonResponse
+     */
+    public function postActionWithValidationDisabledInDto(TestAllDisabledDto $dto): JsonResponse
     {
         return $this->json($dto);
     }

@@ -118,7 +118,7 @@ final class DtoArgumentResolver implements ArgumentValueResolverInterface
 
         try {
             if (empty($content)) {
-                $object = $this->isPreloadDtoRequired($className, $this->getOption(self::OPTION_PRELOAD_ENTITY), $request)
+                $object = $this->isPreloadDtoRequired($className, $request)
                     ? $this->createPreloadedDto($name, $className, $request)
                     : new $className();
             } elseif (is_string($content)) {
@@ -155,7 +155,7 @@ final class DtoArgumentResolver implements ArgumentValueResolverInterface
             throw new $exceptionClass($exception->getMessage(), 400, $exception);
         }
 
-        if ($this->isValidationRequired($request)) {
+        if ($this->isValidationRequired($className, $request)) {
             $violations = $this->validator->validate(
                 $object,
                 null,
@@ -200,7 +200,7 @@ final class DtoArgumentResolver implements ArgumentValueResolverInterface
         ];
 
         $context = array_replace($context, $this->getOption(self::OPTION_SERIALIZER_CONTEXT, []));
-        if ($this->isPreloadDtoRequired($className, $this->getOption(self::OPTION_PRELOAD_ENTITY), $request)) {
+        if ($this->isPreloadDtoRequired($className, $request)) {
             $context[AbstractNormalizer::OBJECT_TO_POPULATE] = $this->createPreloadedDto($name, $className, $request);
         }
         if (defined(DenormalizerInterface::class . '::COLLECT_DENORMALIZATION_ERRORS')) {
@@ -210,13 +210,15 @@ final class DtoArgumentResolver implements ArgumentValueResolverInterface
         return $context;
     }
 
-    private function isPreloadDtoRequired(string $className, ?bool $preloadOption, Request $request): bool
+    private function isPreloadDtoRequired(string $className, Request $request): bool
     {
         if ($this->registry === null) {
             return false;
         }
 
-        if ($preloadOption === false) {
+        $routeOption = $this->getOption(self::OPTION_PRELOAD_ENTITY);
+
+        if ($routeOption === false) {
             return false;
         }
 
@@ -226,8 +228,8 @@ final class DtoArgumentResolver implements ArgumentValueResolverInterface
             return false;
         }
 
-        if ($preloadOption !== null) {
-            return $preloadOption;
+        if (\is_bool($routeOption)) {
+            return $routeOption;
         }
 
         if ($annotation->isPreload() !== null) {
@@ -410,17 +412,33 @@ final class DtoArgumentResolver implements ArgumentValueResolverInterface
         return $user;
     }
 
-    private function isValidationRequired(Request $request): bool
+    private function isValidationRequired(string $className, Request $request): bool
     {
-        $validationConfiguration = $this->configuration->getValidationConfiguration();
-
         if (!$this->validator instanceof ValidatorInterface) {
             return false;
         }
 
-        if (($localOption = $this->getOption(self::OPTION_VALIDATE)) !== null && \is_bool($localOption)) {
-            return $localOption;
+        $routeOption = $this->getOption(self::OPTION_VALIDATE);
+
+        if ($routeOption === false) {
+            return false;
         }
+
+        $annotation = $this->getClassDtoAnnotation($className);
+
+        if (!$annotation instanceof Dto) {
+            return false;
+        }
+
+        if (\is_bool($routeOption)) {
+            return $routeOption;
+        }
+
+        if ($annotation->isValidate() !== null) {
+            return $annotation->isValidate();
+        }
+
+        $validationConfiguration = $this->configuration->getValidationConfiguration();
 
         return $validationConfiguration->isEnabled() && !in_array($request->getMethod(), $validationConfiguration->getExcludedMethods(), true);
     }
