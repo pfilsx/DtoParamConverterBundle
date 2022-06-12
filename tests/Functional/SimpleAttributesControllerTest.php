@@ -101,6 +101,17 @@ final class SimpleAttributesControllerTest extends WebTestCase
     }
 
     /**
+     * @see SimpleAttributesController::postAction()
+     */
+    public function testPostActionValidation(): void
+    {
+        self::expectException(ConverterValidationException::class);
+        $client = self::createClient();
+        $client->catchExceptions(false);
+        $client->jsonRequest(Request::METHOD_POST, '/attributes-test', ['value' => 50]);
+    }
+
+    /**
      * @see SimpleAttributesController::postActionWithValidationDisabledInDto()
      */
     public function testPostActionWithValidationDisabledInDto(): void
