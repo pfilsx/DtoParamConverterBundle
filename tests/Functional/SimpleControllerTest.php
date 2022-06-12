@@ -98,6 +98,17 @@ final class SimpleControllerTest extends WebTestCase
     }
 
     /**
+     * @see SimpleController::postAction()
+     */
+    public function testPostActionValidation(): void
+    {
+        self::expectException(ConverterValidationException::class);
+        $client = self::createClient();
+        $client->catchExceptions(false);
+        $client->jsonRequest(Request::METHOD_POST, '/test', ['value' => 50]);
+    }
+
+    /**
      * @see SimpleController::postActionWithValidationDisabledInDto()
      */
     public function testPostActionWithValidationDisabledInDto(): void

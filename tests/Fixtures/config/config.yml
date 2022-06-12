@@ -5,6 +5,8 @@ framework:
     resource: "%kernel.project_dir%/config/routing.yml"
   fragments:
     enabled: true
+  validation:
+    email_validation_mode: html5
 
 doctrine:
   dbal:

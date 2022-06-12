@@ -13,10 +13,4 @@ interface DtoMapperInterface
      * @param mixed $dto
      */
     public function mapToDto($entity, $dto): void;
-
-    /**
-     * @param mixed $dto
-     * @param mixed $entity
-     */
-    public function mapToEntity($dto, $entity): void;
 }

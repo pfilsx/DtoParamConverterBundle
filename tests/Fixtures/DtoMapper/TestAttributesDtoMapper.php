@@ -24,8 +24,4 @@ final class TestAttributesDtoMapper implements DtoMapperInterface
         $dto->title = $entity->getTitle();
         $dto->value = $entity->getValue();
     }
-
-    public function mapToEntity($dto, $entity): void
-    {
-    }
 }
