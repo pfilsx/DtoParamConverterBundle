@@ -3,56 +3,56 @@ DTO Param Converter Bundle
 
 [![PHP Version Require](http://poser.pugx.org/pfilsx/dto-param-converter-bundle/require/php)](https://packagist.org/packages/pfilsx/dto-param-converter-bundle)
 [![Latest Stable Version](http://poser.pugx.org/pfilsx/dto-param-converter-bundle/v)](https://packagist.org/packages/pfilsx/dto-param-converter-bundle)  
-[![Tests](https://github.com/pfilsx/DtoParamConverterBundle/actions/workflows/tests.yaml/badge.svg?branch=master)](https://github.com/pfilsx/DtoParamConverterBundle/actions/workflows/tests.yaml)
+[![Tests](https://github.com/pfilsx/DtoParamConverterBundle/actions/workflows/ci.yaml/badge.svg?branch=master)](https://github.com/pfilsx/DtoParamConverterBundle/actions/workflows/ci.yaml)
 [![Total Downloads](http://poser.pugx.org/pfilsx/dto-param-converter-bundle/downloads)](https://packagist.org/packages/pfilsx/dto-param-converter-bundle)
 
-Introduction
+Description
 ------------
 
-The bundle provides a simple way to convert requests into DTO, validate and map to entity in Your Symfony REST API Project. It automatically deserealize request content into provided dto, validates it (if required) and injects dto into your controller argument and finally you have a fully valid dto in your controller.
+The bundle provides a simple way to map requests into DTO(Data Transfer Object), 
+validate and inject into Your Symfony project controller. 
+It automatically deserealize request content into provided DTO, 
+validates it (if required) and injects DTO into your controller 
+argument([Symfony Argument Resolver](https://symfony.com/doc/current/controller/argument_value_resolver.html)), 
+and finally you have a fully valid DTO in your controller.
 
 Features
 --------
-* Request deserialization into dto 
-* Automatic validation if validator is included in project and dto has asserts annotations
-* Easy to configure converter options for each request via annotations(serializer, validator options etc)
-* Entity preload into dto before request deserialization(on patch/get methods or if forced in configuration)
-* Link dto with entity via annotation and simple mapper
+* Request deserialization into dto with configurable serializer
+* Automatic configurable validation using [Symfony validator](https://symfony.com/doc/current/validation.html)
+* Easy to configure converter options for each request/DTO via annotations/PHP8 attributes(preload, serializer, validator options etc)
+* Entity preload into DTO before request deserialization
 
 Requirement
 -----------
-* PHP 7.4+
+* PHP 7.4+|8.x
 * Symfony 4.4+|5.3+|6.0+
 
 Installation
 ------------
 
-Via bash:
+Open a command console, enter your project directory and execute the following command to download the latest version of this bundle:
 ```bash
-$ composer require pfilsx/dto-param-converter-bundle
-```
-Via composer.json:
-
-You need to add the following lines in your deps :
-```json
-{
-    "require": {
-        "pfilsx/dto-param-converter-bundle": "^2.0"
-    }
-}
+composer require pfilsx/dto-param-converter-bundle
 ```
 
-For non symfony-flex apps dont forget to add bundle:
+Register bundle into ``config/bundles.php`` (Flex did it automatically):
 ``` php
-$bundles = array(
+return [
     ...
-    new Pfilsx\DtoParamConverter\DtoParamConverterBundle(),
-);
+    Pfilsx\DtoParamConverter\DtoParamConverterBundle::class => ['all' => true],
+];
 ```
+
+Documentation
+-------------
+
+Documentation can be found [here](src/Resources/doc/index.rst).
 
 Usage
 -----
-1. Create DTO class with converter annotation
+
+1. Create DTO class with converter annotation/attribute
 ```php
 use Pfilsx\DtoParamConverter\Annotation\Dto;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -70,6 +70,7 @@ final class SomeDto
   ...
 }
 ```
+
 2. Use DTO in your controller
 ```php
 public function postAction(SomeDto $someDto): Response
@@ -88,6 +89,7 @@ final class SomeDto
     ...
 }
 ```
+
 4. Create entity-dto mapper(if preload required)
 ```php
 
@@ -110,36 +112,12 @@ final class SomeDtoMapper implements DtoMapperInterface
         $dto->title = $entity->getTitle();
         ...
     }
-
-    public function mapToEntity(object $dto, object $entity): void
-    {
-        // your dto to entity mapping logic
-        $entity->setTitle($dto->title);
-        ...
-    }
 }
-```
-5. You can use your dto mapper manually
-```php
-
-private DtoMapperFactory $mapperFactory;
-
-public function __construct(DtoMapperFactory $mapperFactory)
-{
-    $this->mapperFactory = $mapperFactory;
-}
-
-public function someMethod(SomeDto $dto): void 
-{
-    $entity = new SomeEntity();
-    $mapper = $this->mapperFactory->getMapper(SomeDto::class);
-    $mapper->mapToEntity($dto, $entity);
-}
-
 ```
 
 Configuration
 -------------
+
 You can configure bundle globally via `config/packages/dto_param_converter.yaml`:
 
 ```yaml
@@ -165,7 +143,7 @@ Or You can configure converter for each action
 
 ```php
 /**
-* @DtoResolver("someDto", options={
+* @DtoResolver(options={
 *    DtoArgumentResolver::OPTION_SERIALIZER_CONTEXT: {},
 *    DtoArgumentResolver::OPTION_VALIDATOR_GROUPS: {},
 *    DtoArgumentResolver::OPTION_PRELOAD_ENTITY: true,

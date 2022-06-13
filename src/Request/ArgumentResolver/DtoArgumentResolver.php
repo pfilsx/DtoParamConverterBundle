@@ -97,7 +97,7 @@ final class DtoArgumentResolver implements ArgumentValueResolverInterface
 
     public function supports(Request $request, ArgumentMetadata $argument): bool
     {
-        if (!is_string($type = $argument->getType())) {
+        if (!\is_string($type = $argument->getType())) {
             return false;
         }
 
@@ -121,7 +121,7 @@ final class DtoArgumentResolver implements ArgumentValueResolverInterface
                 $object = $this->isPreloadDtoRequired($className, $request)
                     ? $this->createPreloadedDto($name, $className, $request)
                     : new $className();
-            } elseif (is_string($content)) {
+            } elseif (\is_string($content)) {
                 $object = $this->serializer->deserialize(
                     $content,
                     $className,
@@ -196,14 +196,14 @@ final class DtoArgumentResolver implements ArgumentValueResolverInterface
 
         $context = [
             AbstractObjectNormalizer::DISABLE_TYPE_ENFORCEMENT => !$strictTypesConfiguration->isEnabled()
-                || in_array($request->getMethod(), $strictTypesConfiguration->getExcludedMethods(), true),
+                || \in_array($request->getMethod(), $strictTypesConfiguration->getExcludedMethods(), true),
         ];
 
         $context = array_replace($context, $this->getOption(self::OPTION_SERIALIZER_CONTEXT, []));
         if ($this->isPreloadDtoRequired($className, $request)) {
             $context[AbstractNormalizer::OBJECT_TO_POPULATE] = $this->createPreloadedDto($name, $className, $request);
         }
-        if (defined(DenormalizerInterface::class . '::COLLECT_DENORMALIZATION_ERRORS')) {
+        if (\defined(DenormalizerInterface::class . '::COLLECT_DENORMALIZATION_ERRORS')) {
             $context[DenormalizerInterface::COLLECT_DENORMALIZATION_ERRORS] = true;
         }
 
@@ -239,7 +239,7 @@ final class DtoArgumentResolver implements ArgumentValueResolverInterface
         $preloadConfiguration = $this->configuration->getPreloadConfiguration();
 
         return $preloadConfiguration->isEnabled()
-            && in_array($request->getMethod(), $preloadConfiguration->getMethods(), true);
+            && \in_array($request->getMethod(), $preloadConfiguration->getMethods(), true);
     }
 
     private function createPreloadedDto(string $name, string $className, Request $request): object
@@ -352,7 +352,7 @@ final class DtoArgumentResolver implements ArgumentValueResolverInterface
 
         if ($this->getOption(self::OPTION_ENTITY_ID_ATTRIBUTE) !== null) {
             $attributeName = $this->getOption(self::OPTION_ENTITY_ID_ATTRIBUTE);
-        } elseif (count($routeAttributes) === 1) {
+        } elseif (\count($routeAttributes) === 1) {
             $attributeName = array_key_first($routeAttributes);
 
             $em = $this->getManager($className);
@@ -370,7 +370,7 @@ final class DtoArgumentResolver implements ArgumentValueResolverInterface
                 $attributeName = mb_substr($attributeName, 0, -3);
             }
         }
-        if (array_key_exists($attributeName, $routeAttributes)) {
+        if (\array_key_exists($attributeName, $routeAttributes)) {
             return $routeAttributes[$attributeName];
         }
         if ($request->attributes->has('id') && !$this->getOption(self::OPTION_ENTITY_ID_ATTRIBUTE)) {
@@ -405,7 +405,7 @@ final class DtoArgumentResolver implements ArgumentValueResolverInterface
             return null;
         }
 
-        if (!is_object($user = $token->getUser())) {
+        if (!\is_object($user = $token->getUser())) {
             return null;
         }
 
@@ -440,7 +440,7 @@ final class DtoArgumentResolver implements ArgumentValueResolverInterface
 
         $validationConfiguration = $this->configuration->getValidationConfiguration();
 
-        return $validationConfiguration->isEnabled() && !in_array($request->getMethod(), $validationConfiguration->getExcludedMethods(), true);
+        return $validationConfiguration->isEnabled() && !\in_array($request->getMethod(), $validationConfiguration->getExcludedMethods(), true);
     }
 
     private function generateValidationException(ConstraintViolationList $violations): ValidationExceptionInterface

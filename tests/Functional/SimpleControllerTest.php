@@ -23,7 +23,7 @@ final class SimpleControllerTest extends WebTestCase
         self::assertEquals([
             'title' => 'Test title',
             'value' => null,
-        ], \json_decode($client->getResponse()->getContent(), true));
+        ], json_decode($client->getResponse()->getContent(), true));
     }
 
     /**
@@ -38,7 +38,7 @@ final class SimpleControllerTest extends WebTestCase
         self::assertEquals([
             'title' => 'Test title',
             'value' => null,
-        ], \json_decode($client->getResponse()->getContent(), true));
+        ], json_decode($client->getResponse()->getContent(), true));
     }
 
     /**
@@ -64,7 +64,7 @@ final class SimpleControllerTest extends WebTestCase
         self::assertEquals([
             'title' => 'Test1',
             'value' => 10,
-        ], \json_decode($client->getResponse()->getContent(), true));
+        ], json_decode($client->getResponse()->getContent(), true));
     }
 
     /**
@@ -79,7 +79,7 @@ final class SimpleControllerTest extends WebTestCase
         self::assertEquals([
             'title' => 'Test1',
             'value' => 10,
-        ], \json_decode($client->getResponse()->getContent(), true));
+        ], json_decode($client->getResponse()->getContent(), true));
     }
 
     /**
@@ -94,7 +94,7 @@ final class SimpleControllerTest extends WebTestCase
         self::assertEquals([
             'title' => 'Test title',
             'value' => 50,
-        ], \json_decode($client->getResponse()->getContent(), true));
+        ], json_decode($client->getResponse()->getContent(), true));
     }
 
     /**
@@ -120,7 +120,7 @@ final class SimpleControllerTest extends WebTestCase
         self::assertEquals([
             'title' => 'Test title',
             'value' => null,
-        ], \json_decode($client->getResponse()->getContent(), true));
+        ], json_decode($client->getResponse()->getContent(), true));
     }
 
     /**
@@ -135,7 +135,7 @@ final class SimpleControllerTest extends WebTestCase
         self::assertEquals([
             'title' => 'Test title',
             'value' => 50,
-        ], \json_decode($client->getResponse()->getContent(), true));
+        ], json_decode($client->getResponse()->getContent(), true));
     }
 
     /**
@@ -150,6 +150,6 @@ final class SimpleControllerTest extends WebTestCase
         self::assertEquals([
             'title' => 'Test title',
             'value' => 10,
-        ], \json_decode($client->getResponse()->getContent(), true));
+        ], json_decode($client->getResponse()->getContent(), true));
     }
 }

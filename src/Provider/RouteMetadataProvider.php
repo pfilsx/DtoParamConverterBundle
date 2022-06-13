@@ -29,7 +29,7 @@ final class RouteMetadataProvider
 
     public function getMetadata(string $key): array
     {
-        if (array_key_exists($key, $this->localCollection)) {
+        if (\array_key_exists($key, $this->localCollection)) {
             return $this->localCollection[$key];
         }
 
@@ -50,7 +50,7 @@ final class RouteMetadataProvider
 
     public function createMetadata(string $key, array $controller): void
     {
-        if (array_key_exists($key, $this->localCollection)) {
+        if (\array_key_exists($key, $this->localCollection)) {
             return;
         }
 

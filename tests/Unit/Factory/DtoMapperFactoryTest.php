@@ -16,7 +16,7 @@ final class DtoMapperFactoryTest extends TestCase
 
     private DtoMapperFactory $factory;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         $locator = $this->createMock(ServiceLocator::class);
         $locator
