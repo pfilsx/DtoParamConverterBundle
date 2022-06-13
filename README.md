@@ -3,7 +3,7 @@ DTO Param Converter Bundle
 
 [![PHP Version Require](http://poser.pugx.org/pfilsx/dto-param-converter-bundle/require/php)](https://packagist.org/packages/pfilsx/dto-param-converter-bundle)
 [![Latest Stable Version](http://poser.pugx.org/pfilsx/dto-param-converter-bundle/v)](https://packagist.org/packages/pfilsx/dto-param-converter-bundle)  
-[![Tests](https://github.com/pfilsx/DtoParamConverterBundle/actions/workflows/tests.yaml/badge.svg?branch=master)](https://github.com/pfilsx/DtoParamConverterBundle/actions/workflows/tests.yaml)
+[![Tests](https://github.com/pfilsx/DtoParamConverterBundle/actions/workflows/ci.yaml/badge.svg?branch=master)](https://github.com/pfilsx/DtoParamConverterBundle/actions/workflows/ci.yaml)
 [![Total Downloads](http://poser.pugx.org/pfilsx/dto-param-converter-bundle/downloads)](https://packagist.org/packages/pfilsx/dto-param-converter-bundle)
 
 Description

@@ -442,7 +442,7 @@ final class DtoArgumentResolverTest extends TestCase
                 break;
             case Request::METHOD_POST:
             case Request::METHOD_PATCH:
-                $request = new Request([], [], [], [], [], [], \json_encode($parameters));
+                $request = new Request([], [], [], [], [], [], json_encode($parameters));
 
                 break;
             default:

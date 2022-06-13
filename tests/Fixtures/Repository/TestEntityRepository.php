@@ -56,7 +56,7 @@ final class TestEntityRepository implements ObjectRepository
             foreach ($criteria as $key => $value) {
                 $getter = 'get' . ucfirst($key);
 
-                if (!\method_exists($entity, $getter)) {
+                if (!method_exists($entity, $getter)) {
                     return false;
                 }
 

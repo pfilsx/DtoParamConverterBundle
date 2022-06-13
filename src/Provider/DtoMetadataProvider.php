@@ -24,7 +24,7 @@ final class DtoMetadataProvider
 
     public function getDtoMetadata(string $className): ?Dto
     {
-        if (array_key_exists($className, $this->localCollection)) {
+        if (\array_key_exists($className, $this->localCollection)) {
             return $this->localCollection[$className];
         }
 
