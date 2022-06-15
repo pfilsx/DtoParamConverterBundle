@@ -127,6 +127,26 @@ final class SimpleAttributesControllerTest extends WebTestCase
     }
 
     /**
+     * @see SimpleAttributesController::postActionWithMultipleDto()
+     */
+    public function testPostActionWithMultipleDto(): void
+    {
+        $client = self::createClient();
+        $client->jsonRequest(Request::METHOD_POST, '/attributes-test/multiple', ['url' => 'test']);
+
+        $this->assertResponseIsSuccessful();
+        self::assertEquals([
+            'dto' => [
+                'title' => 'Test1',
+                'value' => 10,
+            ],
+            'dto2' => [
+                'url' => 'test',
+            ],
+        ], json_decode($client->getResponse()->getContent(), true));
+    }
+
+    /**
      * @see SimpleAttributesController::patchAction()
      */
     public function testPatchAction(): void

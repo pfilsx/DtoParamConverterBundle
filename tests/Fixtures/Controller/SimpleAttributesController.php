@@ -7,6 +7,7 @@ namespace Pfilsx\DtoParamConverter\Tests\Fixtures\Controller;
 use Pfilsx\DtoParamConverter\Annotation\DtoResolver;
 use Pfilsx\DtoParamConverter\Request\ArgumentResolver\DtoArgumentResolver;
 use Pfilsx\DtoParamConverter\Tests\Fixtures\Dto\TestAllDisabledAttributesDto;
+use Pfilsx\DtoParamConverter\Tests\Fixtures\Dto\TestAttributes2Dto;
 use Pfilsx\DtoParamConverter\Tests\Fixtures\Dto\TestAttributesDto;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -57,6 +58,14 @@ final class SimpleAttributesController extends AbstractController
     public function postActionWithValidationDisabledInDto(TestAllDisabledAttributesDto $dto): JsonResponse
     {
         return $this->json($dto);
+    }
+
+    #[Route(path: '/attributes-test/multiple', methods: ['POST'])]
+    #[DtoResolver('dto', options: [DtoArgumentResolver::OPTION_PRELOAD_ENTITY => true, DtoArgumentResolver::OPTION_ENTITY_EXPR => 'repository.find(1)'])]
+    #[DtoResolver('dto2', options: [DtoArgumentResolver::OPTION_VALIDATE => false])]
+    public function postActionWithMultipleDto(TestAttributesDto $dto, TestAttributes2Dto $dto2): JsonResponse
+    {
+        return $this->json(['dto' => $dto, 'dto2' => $dto2]);
     }
 
     #[Route(path: '/attributes-test', methods: ['PATCH'])]

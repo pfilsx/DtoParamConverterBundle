@@ -99,13 +99,14 @@ final class RouteMetadataProvider
 
     private function getOptions(array $annotations): array
     {
-        $options = null;
+        $options = [];
         foreach ($annotations as $annotation) {
             if ($annotation instanceof DtoResolver) {
-                if ($options !== null) {
-                    throw new \LogicException('Multiple "DtoResolver" annotations are not allowed.');
+                $name = $annotation->getDtoName() ?? '_default';
+                if (\array_key_exists($name, $options)) {
+                    throw new \LogicException('Multiple "DtoResolver" annotations with same dtoName are not allowed.');
                 }
-                $options = $annotation->getOptions();
+                $options[$name] = $annotation->getOptions();
             }
         }
 

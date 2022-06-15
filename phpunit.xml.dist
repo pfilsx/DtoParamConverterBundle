@@ -3,6 +3,7 @@
   <php>
     <server name="KERNEL_CLASS" value="Pfilsx\DtoParamConverter\Tests\Fixtures\TestKernel" />
     <server name="KERNEL_DIR" value="tests/Fixtures/" />
+    <server name="APP_DEBUG" value="false" />
     <env name="SYMFONY_DEPRECATIONS_HELPER" value="/disabled/"/>
   </php>
 

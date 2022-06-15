@@ -6,6 +6,7 @@ namespace Pfilsx\DtoParamConverter\Tests\Fixtures\Controller;
 
 use Pfilsx\DtoParamConverter\Annotation\DtoResolver;
 use Pfilsx\DtoParamConverter\Request\ArgumentResolver\DtoArgumentResolver;
+use Pfilsx\DtoParamConverter\Tests\Fixtures\Dto\Test2Dto;
 use Pfilsx\DtoParamConverter\Tests\Fixtures\Dto\TestAllDisabledDto;
 use Pfilsx\DtoParamConverter\Tests\Fixtures\Dto\TestDto;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -17,7 +18,7 @@ final class SimpleController extends AbstractController
     /**
      * @Route("/test", methods={"GET"})
      *
-     * @DtoResolver({
+     * @DtoResolver(options={
      *     DtoArgumentResolver::OPTION_PRELOAD_ENTITY: false
      * })
      *
@@ -45,7 +46,7 @@ final class SimpleController extends AbstractController
     /**
      * @Route("/test/strict", methods={"GET"})
      *
-     * @DtoResolver({
+     * @DtoResolver(options={
      *     DtoArgumentResolver::OPTION_PRELOAD_ENTITY: false,
      *     DtoArgumentResolver::OPTION_SERIALIZER_CONTEXT: {"disable_type_enforcement": false}
      * })
@@ -74,7 +75,7 @@ final class SimpleController extends AbstractController
     /**
      * @Route("/test/expression", methods={"GET"})
      *
-     * @DtoResolver({
+     * @DtoResolver(options={
      *     DtoArgumentResolver::OPTION_ENTITY_EXPR: "repository.find(1)"
      * })
      *
@@ -112,8 +113,30 @@ final class SimpleController extends AbstractController
     }
 
     /**
+     * @Route("/test/multiple", methods={"POST"})
+     *
+     * @DtoResolver("dto", {
+     *     DtoArgumentResolver::OPTION_PRELOAD_ENTITY: true,
+     *     DtoArgumentResolver::OPTION_ENTITY_EXPR: "repository.find(1)"
+     * })
+     *
+     * @DtoResolver("dto2", {
+     *     DtoArgumentResolver::OPTION_VALIDATE: false
+     * })
+     *
+     * @param TestDto  $dto
+     * @param Test2Dto $dto2
+     *
+     * @return JsonResponse
+     */
+    public function postActionWithMultipleDto(TestDto $dto, Test2Dto $dto2): JsonResponse
+    {
+        return $this->json(['dto' => $dto, 'dto2' => $dto2]);
+    }
+
+    /**
      * @Route("/test", methods={"PATCH"})
-     * @DtoResolver({
+     * @DtoResolver(options={
      *     DtoArgumentResolver::OPTION_PRELOAD_ENTITY: false
      * })
      *

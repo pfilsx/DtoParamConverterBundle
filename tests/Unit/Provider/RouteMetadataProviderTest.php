@@ -38,14 +38,14 @@ final class RouteMetadataProviderTest extends TestCase
     {
         $this->setLocalCollection();
 
-        self::assertEquals(['test' => true], $this->provider->getMetadata('test_key'));
+        self::assertEquals(['_default' => ['test' => true]], $this->provider->getMetadata('test_key'));
     }
 
     public function testGetMetadataFromCache(): void
     {
         $this->mockCacheItemWithHit();
 
-        self::assertEquals(['test' => true], $this->provider->getMetadata('test_key'));
+        self::assertEquals(['_default' => ['test' => true]], $this->provider->getMetadata('test_key'));
     }
 
     public function testGetMetadataOnCacheException(): void
@@ -73,7 +73,7 @@ final class RouteMetadataProviderTest extends TestCase
 
         $this->provider->createMetadata('test_key', []);
 
-        self::assertEquals(['test_key' => ['test' => true]], $this->getLocalCollection());
+        self::assertEquals(['test_key' => ['_default' => ['test' => true]]], $this->getLocalCollection());
     }
 
     public function testCreateMetadataFromCache(): void
@@ -82,7 +82,7 @@ final class RouteMetadataProviderTest extends TestCase
 
         $this->provider->createMetadata('test_key', []);
 
-        self::assertEquals(['test_key' => ['test' => true]], $this->getLocalCollection());
+        self::assertEquals(['test_key' => ['_default' => ['test' => true]]], $this->getLocalCollection());
     }
 
     public function testCreateMetadata(): void
@@ -92,11 +92,11 @@ final class RouteMetadataProviderTest extends TestCase
         $this->reader
             ->expects($this->once())
             ->method('getMethodAnnotations')
-            ->willReturn([new DtoResolver(['test' => true])]);
+            ->willReturn([new DtoResolver('dto', ['test' => true])]);
 
         $this->provider->createMetadata('test_key', [new SimpleController(), 'getAction']);
 
-        self::assertEquals(['test_key' => ['test' => true]], $this->getLocalCollection());
+        self::assertEquals(['test_key' => ['dto' => ['test' => true]]], $this->getLocalCollection());
     }
 
     public function testCreateMetadataOnCacheError(): void
@@ -111,11 +111,11 @@ final class RouteMetadataProviderTest extends TestCase
         $this->reader
             ->expects($this->once())
             ->method('getMethodAnnotations')
-            ->willReturn([new DtoResolver(['test' => true])]);
+            ->willReturn([new DtoResolver('dto', ['test' => true])]);
 
         $this->provider->createMetadata('test_key', [new SimpleController(), 'getAction']);
 
-        self::assertEquals(['test_key' => ['test' => true]], $this->getLocalCollection());
+        self::assertEquals(['test_key' => ['dto' => ['test' => true]]], $this->getLocalCollection());
     }
 
     private function setLocalCollection(): void
@@ -124,7 +124,7 @@ final class RouteMetadataProviderTest extends TestCase
         $refProp = $refClass->getProperty('localCollection');
 
         $refProp->setAccessible(true);
-        $refProp->setValue($this->provider, ['test_key' => ['test' => true]]);
+        $refProp->setValue($this->provider, ['test_key' => ['_default' => ['test' => true]]]);
     }
 
     private function getLocalCollection(): array
@@ -148,7 +148,7 @@ final class RouteMetadataProviderTest extends TestCase
         $itemMock
             ->expects($this->once())
             ->method('get')
-            ->willReturn(['test' => true]);
+            ->willReturn(['_default' => ['test' => true]]);
 
         $this->cache
             ->expects($this->once())
