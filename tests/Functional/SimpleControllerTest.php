@@ -124,6 +124,26 @@ final class SimpleControllerTest extends WebTestCase
     }
 
     /**
+     * @see SimpleController::postActionWithMultipleDto()
+     */
+    public function testPostActionWithMultipleDto(): void
+    {
+        $client = self::createClient();
+        $client->jsonRequest(Request::METHOD_POST, '/test/multiple', ['url' => 'test']);
+
+        $this->assertResponseIsSuccessful();
+        self::assertEquals([
+            'dto' => [
+                'title' => 'Test1',
+                'value' => 10,
+            ],
+            'dto2' => [
+                'url' => 'test',
+            ],
+        ], json_decode($client->getResponse()->getContent(), true));
+    }
+
+    /**
      * @see SimpleController::patchAction()
      */
     public function testPatchAction(): void

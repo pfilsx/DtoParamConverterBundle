@@ -427,7 +427,7 @@ final class DtoArgumentResolverTest extends TestCase
         $provider
             ->expects($this->any())
             ->method('getMetadata')
-            ->willReturn($routeOptions)
+            ->willReturn(['_default' => $routeOptions])
         ;
 
         return $provider;

@@ -112,7 +112,7 @@ final class DtoArgumentResolver implements ArgumentValueResolverInterface
         $this->options = array_replace([
             self::OPTION_ENTITY_MANAGER => $this->configuration->getPreloadConfiguration()->getManagerName(),
             self::OPTION_STRICT_PRELOAD_ENTITY => !$this->configuration->getPreloadConfiguration()->isOptional(),
-        ], $this->getRouteOptions($request->attributes->get('_route')));
+        ], $this->getRouteOptions($request->attributes->get('_route'), $name));
 
         $content = $this->getRequestContent($request);
 
@@ -466,8 +466,10 @@ final class DtoArgumentResolver implements ArgumentValueResolverInterface
             ;
     }
 
-    private function getRouteOptions(?string $routeName): array
+    private function getRouteOptions(?string $routeName, string $dtoName): array
     {
-        return $this->routeMetadataProvider->getMetadata((string) $routeName);
+        $routeMetadata = $this->routeMetadataProvider->getMetadata((string) $routeName);
+
+        return $routeMetadata[$dtoName] ?? $routeMetadata['_default'] ?? [];
     }
 }
