@@ -1,3 +1,7 @@
+.* export-ignore
+*.rst export-ignore
+*.md export-ignore
+src/Resources/doc export-ignore
 /tests export-ignore
 /phpunit.xml.dist export-ignore
 /.github export-ignore

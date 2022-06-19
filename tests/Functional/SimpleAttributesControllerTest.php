@@ -5,19 +5,22 @@ declare(strict_types=1);
 namespace Pfilsx\DtoParamConverter\Tests\Functional;
 
 use Pfilsx\DtoParamConverter\Exception\ConverterValidationException;
-use Pfilsx\DtoParamConverter\Tests\Fixtures\Controller\SimpleController;
+use Pfilsx\DtoParamConverter\Tests\Fixtures\Controller\SimpleAttributesController;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\HttpFoundation\Request;
 
-final class SimpleControllerTest extends WebTestCase
+/**
+ * @requires PHP >= 8.0
+ */
+final class SimpleAttributesControllerTest extends WebTestCase
 {
     /**
-     * @see SimpleController::getAction()
+     * @see SimpleAttributesController::getAction()
      */
     public function testGetAction(): void
     {
         $client = self::createClient();
-        $client->request(Request::METHOD_GET, '/test', ['title' => 'Test title']);
+        $client->request(Request::METHOD_GET, '/attributes-test', ['title' => 'Test title']);
 
         $this->assertResponseIsSuccessful();
         self::assertEquals([
@@ -27,12 +30,12 @@ final class SimpleControllerTest extends WebTestCase
     }
 
     /**
-     * @see SimpleController::getActionWithPreloadDisabledInDto()
+     * @see SimpleAttributesController::getActionWithPreloadDisabledInDto()
      */
     public function testGetActionWithPreloadDisabledInDto(): void
     {
         $client = self::createClient();
-        $client->request(Request::METHOD_GET, '/test/disabled', ['title' => 'Test title']);
+        $client->request(Request::METHOD_GET, '/attributes-test/disabled', ['title' => 'Test title']);
 
         $this->assertResponseIsSuccessful();
         self::assertEquals([
@@ -42,23 +45,23 @@ final class SimpleControllerTest extends WebTestCase
     }
 
     /**
-     * @see SimpleController::getActionWithOverloadedSerializerContext()
+     * @see SimpleAttributesController::getActionWithOverloadedSerializerContext()
      */
     public function testGetActionWithOverloadedSerializerContext(): void
     {
         self::expectException(ConverterValidationException::class);
         $client = self::createClient();
         $client->catchExceptions(false);
-        $client->request(Request::METHOD_GET, '/test/strict', ['title' => 'Test title', 'value' => '20']);
+        $client->request(Request::METHOD_GET, '/attributes-test/strict', ['title' => 'Test title', 'value' => '20']);
     }
 
     /**
-     * @see SimpleController::getWithPreloadAction()
+     * @see SimpleAttributesController::getWithPreloadAction()
      */
     public function testGetWithPreloadAction(): void
     {
         $client = self::createClient();
-        $client->request(Request::METHOD_GET, '/test/1');
+        $client->request(Request::METHOD_GET, '/attributes-test/1');
 
         $this->assertResponseIsSuccessful();
         self::assertEquals([
@@ -68,12 +71,12 @@ final class SimpleControllerTest extends WebTestCase
     }
 
     /**
-     * @see SimpleController::getWithPreloadViaExpressionAction()
+     * @see SimpleAttributesController::getWithPreloadViaExpressionAction()
      */
     public function testGetWithPreloadViaExpressionAction(): void
     {
         $client = self::createClient();
-        $client->request(Request::METHOD_GET, '/test/expression');
+        $client->request(Request::METHOD_GET, '/attributes-test/expression');
 
         $this->assertResponseIsSuccessful();
         self::assertEquals([
@@ -83,12 +86,12 @@ final class SimpleControllerTest extends WebTestCase
     }
 
     /**
-     * @see SimpleController::postAction()
+     * @see SimpleAttributesController::postAction()
      */
     public function testPostAction(): void
     {
         $client = self::createClient();
-        $client->jsonRequest(Request::METHOD_POST, '/test', ['title' => 'Test title', 'value' => 50]);
+        $client->jsonRequest(Request::METHOD_POST, '/attributes-test', ['title' => 'Test title', 'value' => 50]);
 
         $this->assertResponseIsSuccessful();
         self::assertEquals([
@@ -98,23 +101,23 @@ final class SimpleControllerTest extends WebTestCase
     }
 
     /**
-     * @see SimpleController::postAction()
+     * @see SimpleAttributesController::postAction()
      */
     public function testPostActionValidation(): void
     {
         self::expectException(ConverterValidationException::class);
         $client = self::createClient();
         $client->catchExceptions(false);
-        $client->jsonRequest(Request::METHOD_POST, '/test', ['value' => 50]);
+        $client->jsonRequest(Request::METHOD_POST, '/attributes-test', ['value' => 50]);
     }
 
     /**
-     * @see SimpleController::postActionWithValidationDisabledInDto()
+     * @see SimpleAttributesController::postActionWithValidationDisabledInDto()
      */
     public function testPostActionWithValidationDisabledInDto(): void
     {
         $client = self::createClient();
-        $client->jsonRequest(Request::METHOD_POST, '/test/disabled', ['title' => 'Test title']);
+        $client->jsonRequest(Request::METHOD_POST, '/attributes-test/disabled', ['title' => 'Test title']);
 
         $this->assertResponseIsSuccessful();
         self::assertEquals([
@@ -124,12 +127,12 @@ final class SimpleControllerTest extends WebTestCase
     }
 
     /**
-     * @see SimpleController::postActionWithMultipleDto()
+     * @see SimpleAttributesController::postActionWithMultipleDto()
      */
     public function testPostActionWithMultipleDto(): void
     {
         $client = self::createClient();
-        $client->jsonRequest(Request::METHOD_POST, '/test/multiple', ['url' => 'test']);
+        $client->jsonRequest(Request::METHOD_POST, '/attributes-test/multiple', ['url' => 'test']);
 
         $this->assertResponseIsSuccessful();
         self::assertEquals([
@@ -144,12 +147,12 @@ final class SimpleControllerTest extends WebTestCase
     }
 
     /**
-     * @see SimpleController::patchAction()
+     * @see SimpleAttributesController::patchAction()
      */
     public function testPatchAction(): void
     {
         $client = self::createClient();
-        $client->jsonRequest(Request::METHOD_PATCH, '/test', ['title' => 'Test title', 'value' => 50]);
+        $client->jsonRequest(Request::METHOD_PATCH, '/attributes-test', ['title' => 'Test title', 'value' => 50]);
 
         $this->assertResponseIsSuccessful();
         self::assertEquals([
@@ -159,12 +162,12 @@ final class SimpleControllerTest extends WebTestCase
     }
 
     /**
-     * @see SimpleController::patchWithPreloadAction()
+     * @see SimpleAttributesController::patchWithPreloadAction()
      */
     public function testPatchWithPreloadAction(): void
     {
         $client = self::createClient();
-        $client->jsonRequest(Request::METHOD_PATCH, '/test/1', ['title' => 'Test title']);
+        $client->jsonRequest(Request::METHOD_PATCH, '/attributes-test/1', ['title' => 'Test title']);
 
         $this->assertResponseIsSuccessful();
         self::assertEquals([

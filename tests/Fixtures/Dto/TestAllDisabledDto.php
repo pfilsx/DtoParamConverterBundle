@@ -9,9 +9,9 @@ use Pfilsx\DtoParamConverter\Tests\Fixtures\Entity\TestEntity;
 use Symfony\Component\Validator\Constraints as Assert;
 
 /**
- * @Dto(linkedEntity=TestEntity::class)
+ * @Dto(linkedEntity=TestEntity::class, preload=false, validate=false)
  */
-final class TestDto
+final class TestAllDisabledDto
 {
     /**
      * @Assert\NotBlank()
@@ -19,7 +19,7 @@ final class TestDto
     public ?string $title = null;
 
     /**
-     * @Assert\NotNull()
+     * @Assert\NotNull
      * @Assert\GreaterThanOrEqual(10)
      */
     public ?int $value = null;

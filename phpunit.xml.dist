@@ -1,8 +1,9 @@
 <?xml version="1.0"?>
-<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" bootstrap="./vendor/autoload.php" colors="true" xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/9.3/phpunit.xsd">
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" bootstrap="./tests/bootstrap.php" colors="true" xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/9.3/phpunit.xsd">
   <php>
     <server name="KERNEL_CLASS" value="Pfilsx\DtoParamConverter\Tests\Fixtures\TestKernel" />
     <server name="KERNEL_DIR" value="tests/Fixtures/" />
+    <server name="APP_DEBUG" value="false" />
     <env name="SYMFONY_DEPRECATIONS_HELPER" value="/disabled/"/>
   </php>
 

@@ -8,7 +8,9 @@ interface DtoMapperInterface
 {
     public static function getDtoClassName(): string;
 
-    public function mapToDto(object $entity, object $dto): void;
-
-    public function mapToEntity(object $dto, object $entity): void;
+    /**
+     * @param mixed $entity
+     * @param mixed $dto
+     */
+    public function mapToDto($entity, $dto): void;
 }

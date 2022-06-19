@@ -13,7 +13,6 @@ final class TestKernel extends Kernel
     {
         return [
             new \Symfony\Bundle\FrameworkBundle\FrameworkBundle(),
-            new \Sensio\Bundle\FrameworkExtraBundle\SensioFrameworkExtraBundle(),
             new \Doctrine\Bundle\DoctrineBundle\DoctrineBundle(),
             new \Pfilsx\DtoParamConverter\DtoParamConverterBundle(),
         ];

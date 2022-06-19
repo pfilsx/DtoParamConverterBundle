@@ -1,3 +1,6 @@
 Pfilsx\DtoParamConverter\Tests\Fixtures\Controller\SimpleController:
   resource: Pfilsx\DtoParamConverter\Tests\Fixtures\Controller\SimpleController
   type: annotation
+Pfilsx\DtoParamConverter\Tests\Fixtures\Controller\SimpleAttributesController:
+  resource: Pfilsx\DtoParamConverter\Tests\Fixtures\Controller\SimpleAttributesController
+  type: annotation
