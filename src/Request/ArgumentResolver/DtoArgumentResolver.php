@@ -182,7 +182,7 @@ final class DtoArgumentResolver implements ArgumentValueResolverInterface
             case Request::METHOD_POST:
             case Request::METHOD_DELETE:
             case Request::METHOD_PATCH:
-                return $request->getContent();
+                return $request->getContentType() === 'form' ? $request->request->all() : $request->getContent();
             case Request::METHOD_GET:
                 return array_merge($request->query->all(), $request->attributes->all());
             default:
