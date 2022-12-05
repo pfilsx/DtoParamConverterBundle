@@ -30,9 +30,13 @@
             <argument type="service" id="annotation_reader"/>
         </service>
 
+        <service id="pfilsx.dto_converter.validation_collector" class="Pfilsx\DtoParamConverter\Collector\ValidationCollector"/>
+
         <service id="pfilsx.dto_converter.controller.subscriber" class="Pfilsx\DtoParamConverter\EventSubscriber\ControllerEventSubscriber">
             <tag name="kernel.event_subscriber"/>
+            <argument type="service" id="pfilsx.dto_converter.configuration"/>
             <argument type="service" id="pfilsx.dto_converter.controller.route_metadata_provider"/>
+            <argument type="service" id="pfilsx.dto_converter.validation_collector"/>
         </service>
 
         <service id="pfilsx.dto_converter.expression_language.default" class="Symfony\Component\ExpressionLanguage\ExpressionLanguage" />
@@ -45,6 +49,7 @@
             <argument type="service" id="pfilsx.dto_converter.dto_metadata_provider"/>
             <argument type="service" id="pfilsx.dto_converter.controller.route_metadata_provider"/>
             <argument type="service" id="pfilsx.dto_converter.mapper_factory"/>
+            <argument type="service" id="pfilsx.dto_converter.validation_collector"/>
             <argument type="service" id="validator" on-invalid="null"/>
             <argument type="service" id="doctrine" on-invalid="null"/>
             <argument type="service" id="pfilsx.dto_converter.expression_language"

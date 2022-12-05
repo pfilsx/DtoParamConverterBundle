@@ -10,8 +10,8 @@ use Doctrine\Persistence\ManagerRegistry;
 use Doctrine\Persistence\ObjectManager;
 use LogicException;
 use Pfilsx\DtoParamConverter\Annotation\Dto;
+use Pfilsx\DtoParamConverter\Collector\ValidationCollector;
 use Pfilsx\DtoParamConverter\Configuration\Configuration;
-use Pfilsx\DtoParamConverter\Contract\ValidationExceptionInterface;
 use Pfilsx\DtoParamConverter\Factory\DtoMapperFactory;
 use Pfilsx\DtoParamConverter\Provider\DtoMetadataProvider;
 use Pfilsx\DtoParamConverter\Provider\RouteMetadataProvider;
@@ -63,6 +63,8 @@ final class DtoArgumentResolver implements ArgumentValueResolverInterface
 
     private DtoMapperFactory $mapperFactory;
 
+    private ValidationCollector $validationCollector;
+
     private ?ValidatorInterface $validator;
 
     private ?ManagerRegistry $registry;
@@ -79,6 +81,7 @@ final class DtoArgumentResolver implements ArgumentValueResolverInterface
         DtoMetadataProvider $dtoMetadataProvider,
         RouteMetadataProvider $routeMetadataProvider,
         DtoMapperFactory $mapperFactory,
+        ValidationCollector $validationCollector,
         ?ValidatorInterface $validator = null,
         ?ManagerRegistry $registry = null,
         ?ExpressionLanguage $expressionLanguage = null,
@@ -88,6 +91,7 @@ final class DtoArgumentResolver implements ArgumentValueResolverInterface
         $this->serializer = $serializer;
         $this->dtoMetadataProvider = $dtoMetadataProvider;
         $this->mapperFactory = $mapperFactory;
+        $this->validationCollector = $validationCollector;
         $this->validator = $validator;
         $this->registry = $registry;
         $this->language = $expressionLanguage;
@@ -148,14 +152,15 @@ final class DtoArgumentResolver implements ArgumentValueResolverInterface
                 $violations->add(new ConstraintViolation($message, '', $parameters, null, $exception->getPath(), null));
             }
 
-            throw $this->generateValidationException($violations);
+            $this->validationCollector->addAllViolations($violations);
+            $object = null;
         } catch (NotNormalizableValueException $exception) {
             $exceptionClass = $this->configuration->getSerializerConfiguration()->getNormalizerExceptionClass();
 
             throw new $exceptionClass($exception->getMessage(), 400, $exception);
         }
 
-        if ($this->isValidationRequired($className, $request)) {
+        if ($object !== null && $this->isValidationRequired($className, $request)) {
             $violations = $this->validator->validate(
                 $object,
                 null,
@@ -163,7 +168,7 @@ final class DtoArgumentResolver implements ArgumentValueResolverInterface
             );
 
             if ($violations->count() !== 0) {
-                throw $this->generateValidationException($violations);
+                $this->validationCollector->addAllViolations($violations);
             }
         }
 
@@ -441,15 +446,6 @@ final class DtoArgumentResolver implements ArgumentValueResolverInterface
         $validationConfiguration = $this->configuration->getValidationConfiguration();
 
         return $validationConfiguration->isEnabled() && !\in_array($request->getMethod(), $validationConfiguration->getExcludedMethods(), true);
-    }
-
-    private function generateValidationException(ConstraintViolationList $violations): ValidationExceptionInterface
-    {
-        $exceptionClass = $this->configuration->getValidationConfiguration()->getExceptionClass();
-        $exception = new $exceptionClass();
-        $exception->setViolations($violations);
-
-        throw $exception;
     }
 
     /**

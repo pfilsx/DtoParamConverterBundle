@@ -120,10 +120,6 @@ final class SimpleController extends AbstractController
      *     DtoArgumentResolver::OPTION_ENTITY_EXPR: "repository.find(1)"
      * })
      *
-     * @DtoResolver("dto2", {
-     *     DtoArgumentResolver::OPTION_VALIDATE: false
-     * })
-     *
      * @param TestDto  $dto
      * @param Test2Dto $dto2
      *
