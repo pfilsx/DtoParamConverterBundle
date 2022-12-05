@@ -8,6 +8,7 @@ use Pfilsx\DtoParamConverter\Exception\ConverterValidationException;
 use Pfilsx\DtoParamConverter\Tests\Fixtures\Controller\SimpleController;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 
 final class SimpleControllerTest extends WebTestCase
 {
@@ -129,7 +130,7 @@ final class SimpleControllerTest extends WebTestCase
     public function testPostActionWithMultipleDto(): void
     {
         $client = self::createClient();
-        $client->jsonRequest(Request::METHOD_POST, '/test/multiple', ['url' => 'test']);
+        $client->jsonRequest(Request::METHOD_POST, '/test/multiple', ['url' => 'http://test.test']);
 
         $this->assertResponseIsSuccessful();
         self::assertEquals([
@@ -138,9 +139,32 @@ final class SimpleControllerTest extends WebTestCase
                 'value' => 10,
             ],
             'dto2' => [
-                'url' => 'test',
+                'url' => 'http://test.test',
             ],
         ], json_decode($client->getResponse()->getContent(), true));
+    }
+
+    /**
+     * @see SimpleController::postActionWithMultipleDto()
+     */
+    public function testPostActionWithMultipleDtoOnInvalidData(): void
+    {
+        try {
+            $client = self::createClient();
+            $client->catchExceptions(false);
+            $client->jsonRequest(Request::METHOD_POST, '/test/multiple', ['title' => '', 'url' => '']);
+            self::assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
+        } catch (ConverterValidationException $exception) {
+            $result = [];
+            foreach ($exception->getViolations() as $violation) {
+                $result[$violation->getPropertyPath()][] = $violation->getMessage();
+            }
+
+            self::assertEquals([
+                'title' => ['This value should not be blank.'],
+                'url' => ['This value should not be blank.'],
+            ], $result);
+        }
     }
 
     /**

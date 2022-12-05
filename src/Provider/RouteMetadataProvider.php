@@ -9,7 +9,6 @@ use Doctrine\Persistence\Proxy;
 use Pfilsx\DtoParamConverter\Annotation\DtoResolver;
 use Psr\Cache\CacheException;
 use Psr\Cache\CacheItemPoolInterface;
-use ReflectionClass;
 
 final class RouteMetadataProvider
 {
@@ -79,7 +78,7 @@ final class RouteMetadataProvider
     private function readMetadata(array $controller): array
     {
         $className = $this->getRealClass(\get_class($controller[0]));
-        $object = new ReflectionClass($className);
+        $object = new \ReflectionClass($className);
         $method = $object->getMethod($controller[1]);
 
         $methodOptions = $this->getOptions($this->reader->getMethodAnnotations($method));

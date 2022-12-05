@@ -10,6 +10,7 @@ use Doctrine\ORM\NoResultException;
 use Doctrine\Persistence\ManagerRegistry;
 use Doctrine\Persistence\Mapping\ClassMetadata;
 use Doctrine\Persistence\ObjectManager;
+use Pfilsx\DtoParamConverter\Collector\ValidationCollector;
 use Pfilsx\DtoParamConverter\Configuration\Configuration;
 use Pfilsx\DtoParamConverter\Exception\ConverterValidationException;
 use Pfilsx\DtoParamConverter\Factory\DtoMapperFactory;
@@ -56,6 +57,11 @@ final class DtoArgumentResolverTest extends TestCase
      */
     private $tokenStorage;
 
+    /**
+     * @var ValidationCollector
+     */
+    private $validationCollector;
+
     private DtoArgumentResolver $resolver;
 
     protected function setUp(): void
@@ -64,6 +70,7 @@ final class DtoArgumentResolverTest extends TestCase
         $this->language = $this->getMockBuilder(ExpressionLanguage::class)->getMock();
         $this->serviceLocator = $this->getMockBuilder(ServiceLocator::class)->disableOriginalConstructor()->getMock();
         $this->tokenStorage = $this->getMockBuilder(TokenStorageInterface::class)->getMock();
+        $this->validationCollector = new ValidationCollector();
     }
 
     /**
@@ -241,14 +248,23 @@ final class DtoArgumentResolverTest extends TestCase
 
     public function testApplyOnGetWithForcedValidation(): void
     {
-        self::expectException(ConverterValidationException::class);
-
         $request = $this->createRequest(Request::METHOD_GET, ['title' => 'Test', 'value' => 5]);
 
         $argumentMetadata = $this->createArgumentMetadataMock(TestDto::class);
         $this->initializeResolver(null, [DtoArgumentResolver::OPTION_PRELOAD_ENTITY => false, DtoArgumentResolver::OPTION_VALIDATE => true]);
 
         $this->resolver->resolve($request, $argumentMetadata)->current();
+
+        self::assertTrue($this->validationCollector->hasViolations());
+
+        $result = [];
+        foreach ($this->validationCollector->getViolations() as $violation) {
+            $result[$violation->getPropertyPath()][] = $violation->getMessage();
+        }
+
+        self::assertEquals([
+            'value' => ['This value should be greater than or equal to 10.'],
+        ], $result);
     }
 
     public function testApplyOnPost(): void
@@ -283,25 +299,45 @@ final class DtoArgumentResolverTest extends TestCase
      * @dataProvider providerTestApplyOnPostWithInvalidData
      *
      * @param array $requestData
+     * @param array $violations
      */
-    public function testApplyOnPostWithInvalidData(array $requestData): void
+    public function testApplyOnPostWithInvalidData(array $requestData, array $violations): void
     {
-        self::expectException(ConverterValidationException::class);
-
         $request = $this->createRequest(Request::METHOD_POST, $requestData);
 
         $argumentMetadata = $this->createArgumentMetadataMock(TestDto::class);
         $this->initializeResolver();
 
         $this->resolver->resolve($request, $argumentMetadata)->current();
+
+        self::assertTrue($this->validationCollector->hasViolations());
+
+        $result = [];
+        foreach ($this->validationCollector->getViolations() as $violation) {
+            $result[$violation->getPropertyPath()][] = $violation->getMessage();
+        }
+
+        self::assertEquals($violations, $result);
     }
 
     public function providerTestApplyOnPostWithInvalidData(): array
     {
         return [
-            'wrong type' => [['title' => 'Test', 'value' => 'test']],
-            'similar type' => [['title' => 'Test', 'value' => '20']],
-            'invalid value' => [['title' => '', 'value' => 5]],
+            'wrong type' => [
+                ['title' => 'Test', 'value' => 'test'],
+                ['value' => ['The type must be one of "int" ("string" given).']],
+            ],
+            'similar type' => [
+                ['title' => 'Test', 'value' => '20'],
+                ['value' => ['The type must be one of "int" ("string" given).']],
+            ],
+            'invalid value' => [
+                ['title' => '', 'value' => 5],
+                [
+                    'title' => ['This value should not be blank.'],
+                    'value' => ['This value should be greater than or equal to 10.'],
+                ],
+            ],
         ];
     }
 
@@ -377,9 +413,9 @@ final class DtoArgumentResolverTest extends TestCase
         $reader = new AnnotationReader();
 
         $configuration = $configuration ?? new Configuration(
-                ['enabled' => true, 'methods' => ['GET', 'PATCH', 'OPTIONS']],
-                ['strict_types' => ['enabled' => true]],
-                ['enabled' => true, 'exception_class' => ConverterValidationException::class]
+            ['enabled' => true, 'methods' => ['GET', 'PATCH', 'OPTIONS']],
+            ['strict_types' => ['enabled' => true]],
+            ['enabled' => true, 'exception_class' => ConverterValidationException::class]
         );
 
         $this->resolver = new DtoArgumentResolver(
@@ -388,6 +424,7 @@ final class DtoArgumentResolverTest extends TestCase
             new DtoMetadataProvider($reader),
             $this->initializeRouteMetadataProviderMock($routeOptions),
             new DtoMapperFactory($this->serviceLocator),
+            $this->validationCollector,
             Validation::createValidatorBuilder()->addLoader(new AnnotationLoader($reader))->getValidator(),
             $this->registry,
             $this->language,
