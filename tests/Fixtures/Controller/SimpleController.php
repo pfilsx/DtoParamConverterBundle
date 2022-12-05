@@ -17,7 +17,6 @@ final class SimpleController extends AbstractController
 {
     /**
      * @Route("/test", methods={"GET"})
-     *
      * @DtoResolver(options={
      *     DtoArgumentResolver::OPTION_PRELOAD_ENTITY: false
      * })
@@ -45,7 +44,6 @@ final class SimpleController extends AbstractController
 
     /**
      * @Route("/test/strict", methods={"GET"})
-     *
      * @DtoResolver(options={
      *     DtoArgumentResolver::OPTION_PRELOAD_ENTITY: false,
      *     DtoArgumentResolver::OPTION_SERIALIZER_CONTEXT: {"disable_type_enforcement": false}
@@ -74,7 +72,6 @@ final class SimpleController extends AbstractController
 
     /**
      * @Route("/test/expression", methods={"GET"})
-     *
      * @DtoResolver(options={
      *     DtoArgumentResolver::OPTION_ENTITY_EXPR: "repository.find(1)"
      * })
@@ -114,7 +111,6 @@ final class SimpleController extends AbstractController
 
     /**
      * @Route("/test/multiple", methods={"POST"})
-     *
      * @DtoResolver("dto", {
      *     DtoArgumentResolver::OPTION_PRELOAD_ENTITY: true,
      *     DtoArgumentResolver::OPTION_ENTITY_EXPR: "repository.find(1)"

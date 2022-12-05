@@ -413,9 +413,9 @@ final class DtoArgumentResolverTest extends TestCase
         $reader = new AnnotationReader();
 
         $configuration = $configuration ?? new Configuration(
-                ['enabled' => true, 'methods' => ['GET', 'PATCH', 'OPTIONS']],
-                ['strict_types' => ['enabled' => true]],
-                ['enabled' => true, 'exception_class' => ConverterValidationException::class]
+            ['enabled' => true, 'methods' => ['GET', 'PATCH', 'OPTIONS']],
+            ['strict_types' => ['enabled' => true]],
+            ['enabled' => true, 'exception_class' => ConverterValidationException::class]
         );
 
         $this->resolver = new DtoArgumentResolver(

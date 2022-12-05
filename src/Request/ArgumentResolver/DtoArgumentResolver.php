@@ -8,7 +8,6 @@ use Doctrine\DBAL\Types\ConversionException;
 use Doctrine\ORM\NoResultException;
 use Doctrine\Persistence\ManagerRegistry;
 use Doctrine\Persistence\ObjectManager;
-use LogicException;
 use Pfilsx\DtoParamConverter\Annotation\Dto;
 use Pfilsx\DtoParamConverter\Collector\ValidationCollector;
 use Pfilsx\DtoParamConverter\Configuration\Configuration;
@@ -289,7 +288,7 @@ final class DtoArgumentResolver implements ArgumentValueResolverInterface
     private function findEntityViaExpression(string $className, Request $request, string $expression): ?object
     {
         if ($this->language === null) {
-            throw new LogicException('To use the @DtoResolver tag with the "entityExpr" option, you need to install the ExpressionLanguage component.');
+            throw new \LogicException('To use the @DtoResolver tag with the "entityExpr" option, you need to install the ExpressionLanguage component.');
         }
         $variables = array_merge($request->attributes->all(), [
             'repository' => $this->getManager($className)
@@ -304,7 +303,7 @@ final class DtoArgumentResolver implements ArgumentValueResolverInterface
         } catch (ConversionException $e) {
             return null;
         } catch (SyntaxError $e) {
-            throw new LogicException(sprintf('Error parsing expression -- "%s" -- (%s).', $expression, $e->getMessage()), 0, $e);
+            throw new \LogicException(sprintf('Error parsing expression -- "%s" -- (%s).', $expression, $e->getMessage()), 0, $e);
         }
     }
 
@@ -336,12 +335,12 @@ final class DtoArgumentResolver implements ArgumentValueResolverInterface
 
         if (
             $annotation instanceof Dto
-            && !empty(($entityClass = $annotation->getLinkedEntity()))
+            && !empty($entityClass = $annotation->getLinkedEntity())
             && class_exists($entityClass)) {
             return $entityClass;
         }
 
-        throw new LogicException("Unable to find entity class for {$dtoClassName}");
+        throw new \LogicException("Unable to find entity class for {$dtoClassName}");
     }
 
     /**
@@ -459,7 +458,7 @@ final class DtoArgumentResolver implements ArgumentValueResolverInterface
         return \array_key_exists($key, $this->options)
             ? $this->options[$key]
             : $default
-            ;
+        ;
     }
 
     private function getRouteOptions(?string $routeName, string $dtoName): array

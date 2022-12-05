@@ -9,7 +9,9 @@ use Doctrine\Common\Annotations\Annotation\Target;
 
 /**
  * @Annotation
+ *
  * @NamedArgumentConstructor
+ *
  * @Target({"CLASS"})
  */
 #[\Attribute(\Attribute::TARGET_CLASS)]
