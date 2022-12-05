@@ -6,7 +6,6 @@ namespace Pfilsx\DtoParamConverter\Provider;
 
 use Doctrine\Common\Annotations\Reader;
 use Pfilsx\DtoParamConverter\Annotation\Dto;
-use ReflectionClass;
 
 final class DtoMetadataProvider
 {
@@ -29,7 +28,7 @@ final class DtoMetadataProvider
         }
 
         try {
-            $refClass = new ReflectionClass($className);
+            $refClass = new \ReflectionClass($className);
         } catch (\ReflectionException $e) {
             $this->localCollection[$className] = null;
 

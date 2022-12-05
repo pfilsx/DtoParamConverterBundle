@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Pfilsx\DtoParamConverter\Factory;
 
-use LogicException;
 use Pfilsx\DtoParamConverter\Contract\DtoMapperInterface;
 use Symfony\Component\DependencyInjection\ServiceLocator;
 
@@ -21,7 +20,7 @@ final class DtoMapperFactory
     {
         $mapper = $this->locator->get($dtoClassName);
         if (!$mapper instanceof DtoMapperInterface) {
-            throw new LogicException('Dto mapper should implements ' . DtoMapperInterface::class);
+            throw new \LogicException('Dto mapper should implements ' . DtoMapperInterface::class);
         }
 
         return $mapper;

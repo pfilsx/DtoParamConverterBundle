@@ -8,10 +8,9 @@ use Doctrine\DBAL\Types\ConversionException;
 use Doctrine\ORM\NoResultException;
 use Doctrine\Persistence\ManagerRegistry;
 use Doctrine\Persistence\ObjectManager;
-use LogicException;
 use Pfilsx\DtoParamConverter\Annotation\Dto;
+use Pfilsx\DtoParamConverter\Collector\ValidationCollector;
 use Pfilsx\DtoParamConverter\Configuration\Configuration;
-use Pfilsx\DtoParamConverter\Contract\ValidationExceptionInterface;
 use Pfilsx\DtoParamConverter\Factory\DtoMapperFactory;
 use Pfilsx\DtoParamConverter\Provider\DtoMetadataProvider;
 use Pfilsx\DtoParamConverter\Provider\RouteMetadataProvider;
@@ -63,6 +62,8 @@ final class DtoArgumentResolver implements ArgumentValueResolverInterface
 
     private DtoMapperFactory $mapperFactory;
 
+    private ValidationCollector $validationCollector;
+
     private ?ValidatorInterface $validator;
 
     private ?ManagerRegistry $registry;
@@ -79,6 +80,7 @@ final class DtoArgumentResolver implements ArgumentValueResolverInterface
         DtoMetadataProvider $dtoMetadataProvider,
         RouteMetadataProvider $routeMetadataProvider,
         DtoMapperFactory $mapperFactory,
+        ValidationCollector $validationCollector,
         ?ValidatorInterface $validator = null,
         ?ManagerRegistry $registry = null,
         ?ExpressionLanguage $expressionLanguage = null,
@@ -88,6 +90,7 @@ final class DtoArgumentResolver implements ArgumentValueResolverInterface
         $this->serializer = $serializer;
         $this->dtoMetadataProvider = $dtoMetadataProvider;
         $this->mapperFactory = $mapperFactory;
+        $this->validationCollector = $validationCollector;
         $this->validator = $validator;
         $this->registry = $registry;
         $this->language = $expressionLanguage;
@@ -148,14 +151,15 @@ final class DtoArgumentResolver implements ArgumentValueResolverInterface
                 $violations->add(new ConstraintViolation($message, '', $parameters, null, $exception->getPath(), null));
             }
 
-            throw $this->generateValidationException($violations);
+            $this->validationCollector->addAllViolations($violations);
+            $object = null;
         } catch (NotNormalizableValueException $exception) {
             $exceptionClass = $this->configuration->getSerializerConfiguration()->getNormalizerExceptionClass();
 
             throw new $exceptionClass($exception->getMessage(), 400, $exception);
         }
 
-        if ($this->isValidationRequired($className, $request)) {
+        if ($object !== null && $this->isValidationRequired($className, $request)) {
             $violations = $this->validator->validate(
                 $object,
                 null,
@@ -163,7 +167,7 @@ final class DtoArgumentResolver implements ArgumentValueResolverInterface
             );
 
             if ($violations->count() !== 0) {
-                throw $this->generateValidationException($violations);
+                $this->validationCollector->addAllViolations($violations);
             }
         }
 
@@ -284,7 +288,7 @@ final class DtoArgumentResolver implements ArgumentValueResolverInterface
     private function findEntityViaExpression(string $className, Request $request, string $expression): ?object
     {
         if ($this->language === null) {
-            throw new LogicException('To use the @DtoResolver tag with the "entityExpr" option, you need to install the ExpressionLanguage component.');
+            throw new \LogicException('To use the @DtoResolver tag with the "entityExpr" option, you need to install the ExpressionLanguage component.');
         }
         $variables = array_merge($request->attributes->all(), [
             'repository' => $this->getManager($className)
@@ -299,7 +303,7 @@ final class DtoArgumentResolver implements ArgumentValueResolverInterface
         } catch (ConversionException $e) {
             return null;
         } catch (SyntaxError $e) {
-            throw new LogicException(sprintf('Error parsing expression -- "%s" -- (%s).', $expression, $e->getMessage()), 0, $e);
+            throw new \LogicException(sprintf('Error parsing expression -- "%s" -- (%s).', $expression, $e->getMessage()), 0, $e);
         }
     }
 
@@ -331,12 +335,12 @@ final class DtoArgumentResolver implements ArgumentValueResolverInterface
 
         if (
             $annotation instanceof Dto
-            && !empty(($entityClass = $annotation->getLinkedEntity()))
+            && !empty($entityClass = $annotation->getLinkedEntity())
             && class_exists($entityClass)) {
             return $entityClass;
         }
 
-        throw new LogicException("Unable to find entity class for {$dtoClassName}");
+        throw new \LogicException("Unable to find entity class for {$dtoClassName}");
     }
 
     /**
@@ -443,15 +447,6 @@ final class DtoArgumentResolver implements ArgumentValueResolverInterface
         return $validationConfiguration->isEnabled() && !\in_array($request->getMethod(), $validationConfiguration->getExcludedMethods(), true);
     }
 
-    private function generateValidationException(ConstraintViolationList $violations): ValidationExceptionInterface
-    {
-        $exceptionClass = $this->configuration->getValidationConfiguration()->getExceptionClass();
-        $exception = new $exceptionClass();
-        $exception->setViolations($violations);
-
-        throw $exception;
-    }
-
     /**
      * @param string $key
      * @param mixed  $default
@@ -463,7 +458,7 @@ final class DtoArgumentResolver implements ArgumentValueResolverInterface
         return \array_key_exists($key, $this->options)
             ? $this->options[$key]
             : $default
-            ;
+        ;
     }
 
     private function getRouteOptions(?string $routeName, string $dtoName): array
