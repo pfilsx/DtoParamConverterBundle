@@ -14,6 +14,7 @@ final class Test2Dto
 {
     /**
      * @Assert\NotBlank()
+     *
      * @Assert\Url()
      */
     public ?string $url = null;

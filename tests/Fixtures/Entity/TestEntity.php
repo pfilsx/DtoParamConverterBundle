@@ -14,7 +14,9 @@ class TestEntity
 {
     /**
      * @Mapping\Column(type="integer")
+     *
      * @Mapping\Id
+     *
      * @Mapping\GeneratedValue(strategy="AUTO")
      */
     private int $id;
