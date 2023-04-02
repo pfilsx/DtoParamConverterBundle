@@ -20,6 +20,7 @@ final class TestAllDisabledDto
 
     /**
      * @Assert\NotNull
+     *
      * @Assert\GreaterThanOrEqual(10)
      */
     public ?int $value = null;
